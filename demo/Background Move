@@ -1,0 +1,131 @@
+import pgzrun
+
+rframe = 0 
+lframe = 0
+iframe = 0
+TIME = 0
+STATE = 'IDLE'
+DIRECTION = 'RIGHT'
+runlset = []
+runrset = []
+idlelset = []
+idlerset = []
+bg1 = []
+bg2 = []
+jumph = 0
+for i in range(8):
+    runrset.append('run\\runr\\right'+str(i))
+    runlset.append('run\\runl\\left'+str(i))
+for i in range(12):
+    idlerset.append('idle\\idler\\idler'+str(i))
+    idlelset.append('idle\\idlel\\idlel'+str(i))
+WIDTH = 384
+HEIGHT = 216
+ME = Actor('idle\idler\idler0')
+ME.topright = 384/2,216-ME.height
+for i in range(5):
+    bg1.append(Actor("background\\plx-" + str(i+1)))
+    bg2.append(Actor("background\\plx-" + str(i+1)))
+    bg1[i].topright = WIDTH*0.5,0
+    bg2[i].topleft = WIDTH*0.5,0
+
+def moveLeft(act):
+    act.left -= 2
+    if act.right <= 0:
+        act.left = WIDTH
+def moveRight(act):
+    act.left += 2
+    if act.left >= WIDTH:
+        act.right = 0
+def bgLeft():
+    for i in bg1:
+        moveLeft(i)
+    for i in bg2:
+        moveLeft(i)
+def bgRight():
+    for i in bg1:
+        moveRight(i)
+    for i in bg2:
+        moveRight(i)
+def draw():
+    screen.clear()
+    for i in range(5):
+        bg1[i].draw()
+        bg2[i].draw()
+    ME.draw()
+
+def update():
+    global STATE,DIRECTION,rframe,lframe,iframe,jumph
+    ##JUMP
+    if(keyboard.space and STATE != 'FALL'):
+        if(STATE != 'JUMP'):
+            jumph = 0
+        STATE = 'JUMP'
+    if(STATE == 'JUMP'):
+        if(DIRECTION == 'RIGHT'):
+            ME.image = 'jump\\jumpr'
+        elif (DIRECTION == 'LEFT'):
+            ME.image = 'jump\\jumpl'
+        ME.top -= 2
+        jumph += 2
+        if(keyboard.right):
+            DIRECTION = 'RIGHT'
+            #moveRight(ME)
+            bgLeft()
+        elif(keyboard.left):
+            DIRECTION = 'LEFT'
+            #moveLeft(ME)
+            bgRight()
+        if(jumph == 40):
+            STATE = 'FALL'
+        return
+    if(STATE == 'FALL'):
+        if(DIRECTION == 'RIGHT'):
+            ME.image = 'landing\\landingr'
+        elif (DIRECTION == 'LEFT'):
+            ME.image = 'landing\\landingl'
+        ME.top += 2
+        jumph -= 2
+        if(keyboard.right):
+            DIRECTION = 'RIGHT'
+            #moveRight(ME)
+            bgLeft()
+        elif(keyboard.left):
+            DIRECTION = 'LEFT'
+            #moveLeft(ME)
+            bgRight()
+        if(jumph == 0):
+            STATE = 'IDLE'
+        return
+    ##MOVE RIGHT    
+    if(keyboard.right):
+        iframe = 0
+        if(STATE != 'RUN' or DIRECTION != 'RIGHT'):
+            rframe = 0
+        STATE,DIRECTION = 'RUN','RIGHT'
+        rframe += 0.25
+        ME.image = runrset[int(rframe)%8]
+        #moveRight(ME)
+        bgLeft()
+        return
+    ##MOVE LEFT
+    elif(keyboard.left): 
+        iframe = 0
+        if(STATE != 'RUN' or DIRECTION != 'LEFT'):
+            lframe = 0
+        STATE,DIRECTION = 'RUN','LEFT'
+        lframe += 0.25
+        ME.image = runlset[int(lframe)%8]
+        #moveLeft(ME)
+        bgRight()
+        return
+    STATE = 'IDLE'
+    ##IDLE
+    if(STATE == 'IDLE' and DIRECTION == 'LEFT'): 
+        iframe += 0.25
+        ME.image = idlelset[int(iframe)%12]
+    elif(STATE == 'IDLE' and DIRECTION == 'RIGHT'):
+        iframe += 0.25
+        ME.image = idlerset[int(iframe)%12]
+
+pgzrun.go()
