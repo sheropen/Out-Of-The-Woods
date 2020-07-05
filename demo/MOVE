@@ -19,13 +19,18 @@ for i in range(12):
     idlelset.append('idle\\idlel\\idlel'+str(i))
 
 ME = Actor('idle\idler\idler0')
-ME.topright = 250,400
+ME.topright = 0,216-ME.height
 
-WIDTH = 500
-HEIGHT = 500
+WIDTH = 384
+HEIGHT = 216
 
 def draw():
     screen.clear()
+    screen.blit("background\\plx-1", (0, 0))
+    screen.blit("background\\plx-2", (0, 0))
+    screen.blit("background\\plx-3", (0, 0))
+    screen.blit("background\\plx-4", (0, 0))
+    screen.blit("background\\plx-5", (0, 0))
     ME.draw()
 
 def update():
