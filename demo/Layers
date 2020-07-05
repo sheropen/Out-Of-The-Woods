@@ -1,5 +1,6 @@
 import pgzrun
 
+#Initialize global variable
 rframe,lframe,iframe = 0,0,0 
 TIME = 0
 STATE = 'IDLE'
