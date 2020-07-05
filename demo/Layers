@@ -1,0 +1,209 @@
+import pgzrun
+
+rframe,lframe,iframe = 0,0,0 
+TIME = 0
+STATE = 'IDLE'
+DIRECTION = 'RIGHT'
+runlset,runrset,idlelset,idlerset = [],[],[],[]
+bg1,bg2 = [],[]
+ground,layer2 = [],[]
+jumph = 0
+spdx = 2
+
+for i in range(8):
+    runrset.append('run\\runr\\right'+str(i))
+    runlset.append('run\\runl\\left'+str(i))
+for i in range(12):
+    idlerset.append('idle\\idler\\idler'+str(i))
+    idlelset.append('idle\\idlel\\idlel'+str(i))
+
+WIDTH = 384
+HEIGHT = 216
+##Setup Character
+ME = Actor('idle\idler\idler0')
+ME.topright = WIDTH/2,216-ME.height-20
+camCenter = WIDTH/2
+##Setup background
+for i in range(5):
+    bg1.append(Actor("background\\plx-" + str(i+1)))
+    bg2.append(Actor("background\\plx-" + str(i+1)))
+    bg1[i].topright = WIDTH*0.5,0
+    bg2[i].topleft = WIDTH*0.5,0
+
+##Setup floor
+for i in range(50):
+    ground.append(Actor('tileset\\ground'))
+    ground[i].topright = (i+1)*81,HEIGHT - 18
+
+##Setup second layer
+for i in range(10):
+    layer2.append(Actor('tileset\\ground'))
+    layer2[i].bottomright = 5*(i+1)*81,HEIGHT - ME.height*1.7
+
+player_width = 17
+rightLimit,leftLimit = 50*81-WIDTH/2,WIDTH/2 
+rightBorder,leftBorder = 50*81-player_width,player_width
+floor = [ground,layer2]
+all_elements = [bg1,bg2,ground,layer2]
+
+def moveLeft(act):
+    act.left -= spdx
+    if act.right <= 0:
+        act.left = WIDTH
+def moveRight(act):
+    act.left += spdx
+    if act.left >= WIDTH:
+        act.right = 0
+def playerMoveLeft(act):
+    if act.left <= 0:
+        return
+    else:
+        act.left -= spdx
+def playerMoveRight(act):
+    if act.right >= WIDTH:
+        return
+    else:
+        act.left += spdx
+def bgLeft():
+    for i in bg1:
+        moveLeft(i)
+    for i in bg2:
+        moveLeft(i)
+def bgRight():
+    for i in bg1:
+        moveRight(i)
+    for i in bg2:
+        moveRight(i)
+
+def floorLeft():
+    for i in floor:
+        for j in i:
+            j.left -= spdx
+
+def floorRight():
+    for i in floor:
+        for j in i:
+            j.left += spdx
+
+def collideFloor():
+    for i in floor:
+        for j in i:
+            if(ME.colliderect(j)):
+                return True
+    return False
+
+def screenLeft():
+    global camCenter
+    camCenter += spdx
+    if(camCenter > rightBorder):
+        camCenter = rightBorder
+    if(rightLimit <= camCenter):
+        playerMoveRight(ME)
+    elif(camCenter <= leftLimit):
+        playerMoveRight(ME)
+    else:
+        bgLeft()
+        floorLeft()
+
+def screenRight():
+    global camCenter
+    camCenter -= spdx
+    if(camCenter < leftBorder):
+        camCenter = leftBorder
+    if(camCenter <= leftLimit):
+        playerMoveLeft(ME)
+    elif(rightLimit <= camCenter):
+        playerMoveLeft(ME)
+    else:
+        bgRight()
+        floorRight()
+
+def draw():
+    screen.clear()
+    for i in range(5):
+        bg1[i].draw()
+        bg2[i].draw()
+    for i in ground:
+        i.draw()
+    for i in layer2:
+        i.draw()
+    ME.draw()
+
+def update():
+    global STATE,DIRECTION,rframe,lframe,iframe,jumph,myCenter
+    ##JUMP
+    if(keyboard.space and STATE != 'FALL'):
+        if(STATE != 'JUMP'):
+            jumph = 0
+        STATE = 'JUMP'
+    if(STATE == 'JUMP'):
+        if(DIRECTION == 'RIGHT'):
+            ME.image = 'jump\\jumpr'
+        elif (DIRECTION == 'LEFT'):
+            ME.image = 'jump\\jumpl'
+        ME.top -= spdx*1.5
+        jumph += spdx*1.5
+        if(keyboard.right):
+            DIRECTION = 'RIGHT'
+            if not collideFloor():
+                screenLeft()
+        elif(keyboard.left):
+            DIRECTION = 'LEFT'
+            if not collideFloor():
+                screenRight()
+        if(jumph >= 80):
+            STATE = 'FALL'
+        return
+    if not collideFloor():
+        STATE = 'FALL'
+    if(STATE == 'FALL'):
+        if(DIRECTION == 'RIGHT'):
+            ME.image = 'landing\\landingr'
+        elif (DIRECTION == 'LEFT'):
+            ME.image = 'landing\\landingl'
+        ME.top += spdx*1.5
+        jumph -= spdx*1.5
+        if(keyboard.right):
+            DIRECTION = 'RIGHT'
+            if not collideFloor():
+                screenLeft()
+        elif(keyboard.left):
+            DIRECTION = 'LEFT'
+            if not collideFloor():    
+                screenRight()
+        for f in floor:
+            for g in f:
+                if(g.colliderect(ME)):
+                    STATE = 'IDLE'
+                    break
+        return
+    ##MOVE RIGHT    
+    if(keyboard.right):
+        iframe = 0
+        if(STATE != 'RUN' or DIRECTION != 'RIGHT'):
+            rframe = 0
+        STATE,DIRECTION = 'RUN','RIGHT'
+        rframe += 0.25
+        ME.image = runrset[int(rframe)%8]
+        screenLeft()
+        return
+    ##MOVE LEFT
+    elif(keyboard.left): 
+        iframe = 0
+        if(STATE != 'RUN' or DIRECTION != 'LEFT'):
+            lframe = 0
+        STATE,DIRECTION = 'RUN','LEFT'
+        lframe += 0.25
+        ME.image = runlset[int(lframe)%8]
+        screenRight()
+        return
+    STATE = 'IDLE'
+    ##IDLE
+    if(STATE == 'IDLE' and DIRECTION == 'LEFT'): 
+        iframe += 0.25
+        ME.image = idlelset[int(iframe)%12]
+    elif(STATE == 'IDLE' and DIRECTION == 'RIGHT'):
+        iframe += 0.25
+        ME.image = idlerset[int(iframe)%12]
+
+pgzrun.go()
