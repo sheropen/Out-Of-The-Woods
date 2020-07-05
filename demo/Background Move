@@ -1,42 +1,61 @@
 import pgzrun
 
-rframe = 0 
-lframe = 0
-iframe = 0
+rframe,lframe,iframe = 0,0,0 
 TIME = 0
 STATE = 'IDLE'
 DIRECTION = 'RIGHT'
-runlset = []
-runrset = []
-idlelset = []
-idlerset = []
-bg1 = []
-bg2 = []
+runlset,runrset,idlelset,idlerset = [],[],[],[]
+bg1,bg2 = [],[]
+ground = []
 jumph = 0
+spdx = 2
+
 for i in range(8):
     runrset.append('run\\runr\\right'+str(i))
     runlset.append('run\\runl\\left'+str(i))
 for i in range(12):
     idlerset.append('idle\\idler\\idler'+str(i))
     idlelset.append('idle\\idlel\\idlel'+str(i))
+
 WIDTH = 384
 HEIGHT = 216
+##Setup Character
 ME = Actor('idle\idler\idler0')
-ME.topright = 384/2,216-ME.height
+ME.topright = WIDTH/2,216-ME.height-20
+camCenter = WIDTH/2
+##Setup background
 for i in range(5):
     bg1.append(Actor("background\\plx-" + str(i+1)))
     bg2.append(Actor("background\\plx-" + str(i+1)))
     bg1[i].topright = WIDTH*0.5,0
     bg2[i].topleft = WIDTH*0.5,0
 
+##Setup floor
+for i in range(50):
+    ground.append(Actor('tileset\\ground'))
+    ground[i].topright = (i+1)*81,HEIGHT - 20
+rightLimit,leftLimit = 50*81-WIDTH/2,WIDTH/2 
+rightBorder,leftBorder = 50*81,0
+all_elements = [bg1,bg2,ground]
+
 def moveLeft(act):
-    act.left -= 2
+    act.left -= spdx
     if act.right <= 0:
         act.left = WIDTH
 def moveRight(act):
-    act.left += 2
+    act.left += spdx
     if act.left >= WIDTH:
         act.right = 0
+def playerMoveLeft(act):
+    if act.left <= 0:
+        return
+    else:
+        act.left -= spdx
+def playerMoveRight(act):
+    if act.right >= WIDTH:
+        return
+    else:
+        act.left += spdx
 def bgLeft():
     for i in bg1:
         moveLeft(i)
@@ -47,15 +66,51 @@ def bgRight():
         moveRight(i)
     for i in bg2:
         moveRight(i)
+
+def groundLeft():
+    for i in ground:
+        i.left -= spdx
+
+def groundRight():
+    for i in ground:
+        i.left += spdx
+def screenLeft():
+    global camCenter
+    camCenter += spdx
+    if(camCenter > rightBorder):
+        camCenter = rightBorder
+    if(rightLimit <= camCenter):
+        playerMoveRight(ME)
+    elif(camCenter <= leftLimit):
+        playerMoveRight(ME)
+    else:
+        bgLeft()
+        groundLeft()
+
+def screenRight():
+    global camCenter
+    camCenter -= spdx
+    if(camCenter < leftBorder):
+        camCenter = leftBorder
+    if(camCenter <= leftLimit):
+        playerMoveLeft(ME)
+    elif(rightLimit <= camCenter):
+        playerMoveLeft(ME)
+    else:
+            bgRight()
+            groundRight()
+
 def draw():
     screen.clear()
     for i in range(5):
         bg1[i].draw()
         bg2[i].draw()
+    for i in ground:
+        i.draw()
     ME.draw()
 
 def update():
-    global STATE,DIRECTION,rframe,lframe,iframe,jumph
+    global STATE,DIRECTION,rframe,lframe,iframe,jumph,myCenter
     ##JUMP
     if(keyboard.space and STATE != 'FALL'):
         if(STATE != 'JUMP'):
@@ -66,17 +121,17 @@ def update():
             ME.image = 'jump\\jumpr'
         elif (DIRECTION == 'LEFT'):
             ME.image = 'jump\\jumpl'
-        ME.top -= 2
-        jumph += 2
+        ME.top -= spdx
+        jumph += spdx
         if(keyboard.right):
             DIRECTION = 'RIGHT'
             #moveRight(ME)
-            bgLeft()
+            screenLeft()
         elif(keyboard.left):
             DIRECTION = 'LEFT'
             #moveLeft(ME)
-            bgRight()
-        if(jumph == 40):
+            screenRight()
+        if(jumph == 60):
             STATE = 'FALL'
         return
     if(STATE == 'FALL'):
@@ -84,16 +139,16 @@ def update():
             ME.image = 'landing\\landingr'
         elif (DIRECTION == 'LEFT'):
             ME.image = 'landing\\landingl'
-        ME.top += 2
-        jumph -= 2
+        ME.top += spdx
+        jumph -= spdx
         if(keyboard.right):
             DIRECTION = 'RIGHT'
             #moveRight(ME)
-            bgLeft()
+            screenLeft()
         elif(keyboard.left):
             DIRECTION = 'LEFT'
             #moveLeft(ME)
-            bgRight()
+            screenRight()
         if(jumph == 0):
             STATE = 'IDLE'
         return
@@ -106,7 +161,7 @@ def update():
         rframe += 0.25
         ME.image = runrset[int(rframe)%8]
         #moveRight(ME)
-        bgLeft()
+        screenLeft()
         return
     ##MOVE LEFT
     elif(keyboard.left): 
@@ -117,7 +172,7 @@ def update():
         lframe += 0.25
         ME.image = runlset[int(lframe)%8]
         #moveLeft(ME)
-        bgRight()
+        screenRight()
         return
     STATE = 'IDLE'
     ##IDLE
