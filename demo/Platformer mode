@@ -23,8 +23,7 @@ for i in range(12):
 
 ##Setup Character
 ME = Actor('idle\idler\idler0')
-ME.topright = WIDTH/2,216-ME.height-20
-camCenter = WIDTH/2
+
 ##Setup background
 for i in range(5):
     bg1.append(Actor("background\\plx-" + str(i+1)))
@@ -47,6 +46,8 @@ rightLimit,leftLimit = 50*81-WIDTH/2,WIDTH/2
 rightBorder,leftBorder = 50*81-player_width,player_width
 floor = [ground,layer2]
 all_elements = [bg1,bg2,ground,layer2]
+ME.topleft = 0,0
+camCenter = leftBorder
 
 ##Actor Moves
 #Infinite Moves
@@ -122,7 +123,7 @@ def screenRight():
 def collideFloor():
     for i in floor:
         for j in i:
-            if(ME.colliderect(j)):
+            if(ME.colliderect(j) and j.top-spdx<= ME.bottom <= j.top+spdx):
                 return True
     return False
 
@@ -141,7 +142,7 @@ def draw():
 def update():
     global STATE,DIRECTION,rframe,lframe,iframe,jumph,myCenter
     ##JUMP
-    if(keyboard.space and STATE != 'FALL'):
+    if(keyboard.up and STATE != 'FALL'):
         if(STATE != 'JUMP'):
             jumph = 0
         STATE = 'JUMP'
@@ -180,11 +181,8 @@ def update():
             DIRECTION = 'LEFT'
             if not collideFloor():    
                 screenRight()
-        for f in floor:
-            for g in f:
-                if(g.colliderect(ME)):
-                    STATE = 'IDLE'
-                    break
+        if collideFloor():
+            STATE = 'IDLE'
         return
     ##MOVE RIGHT    
     if(keyboard.right):
