@@ -1,16 +1,19 @@
 import pgzrun
 
 #Initialize global variable
-rframe,lframe,iframe = 0,0,0 
+WIDTH = 384
+HEIGHT = 216
+rframe,lframe,iframe = 0,0,0 #Determine the current frame of character action
 TIME = 0
-STATE = 'IDLE'
-DIRECTION = 'RIGHT'
-runlset,runrset,idlelset,idlerset = [],[],[],[]
-bg1,bg2 = [],[]
-ground,layer2 = [],[]
-jumph = 0
-spdx = 2
+STATE = 'IDLE' #Character Status
+DIRECTION = 'RIGHT' #Character Heading
+runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
+bg1,bg2 = [],[] #Background
+ground,layer2 = [],[] #Ground and layer2
+jumph = 0 #Current Jumping Height
+spdx = 2 #Speed of moves
 
+#Setup actions' animation
 for i in range(8):
     runrset.append('run\\runr\\right'+str(i))
     runlset.append('run\\runl\\left'+str(i))
@@ -18,8 +21,6 @@ for i in range(12):
     idlerset.append('idle\\idler\\idler'+str(i))
     idlelset.append('idle\\idlel\\idlel'+str(i))
 
-WIDTH = 384
-HEIGHT = 216
 ##Setup Character
 ME = Actor('idle\idler\idler0')
 ME.topright = WIDTH/2,216-ME.height-20
@@ -47,14 +48,17 @@ rightBorder,leftBorder = 50*81-player_width,player_width
 floor = [ground,layer2]
 all_elements = [bg1,bg2,ground,layer2]
 
+##Actor Moves
+#Infinite Moves
 def moveLeft(act):
     act.left -= spdx
-    if act.right <= 0:
-        act.left = WIDTH
+    if act.right < 0:
+        act.left = WIDTH-2
 def moveRight(act):
     act.left += spdx
-    if act.left >= WIDTH:
-        act.right = 0
+    if act.left > WIDTH:
+        act.right = 2
+#Player Moves
 def playerMoveLeft(act):
     if act.left <= 0:
         return
@@ -65,6 +69,9 @@ def playerMoveRight(act):
         return
     else:
         act.left += spdx
+
+## Move in group
+#Background
 def bgLeft():
     for i in bg1:
         moveLeft(i)
@@ -75,24 +82,17 @@ def bgRight():
         moveRight(i)
     for i in bg2:
         moveRight(i)
-
+#Floor
 def floorLeft():
     for i in floor:
         for j in i:
             j.left -= spdx
-
 def floorRight():
     for i in floor:
         for j in i:
             j.left += spdx
 
-def collideFloor():
-    for i in floor:
-        for j in i:
-            if(ME.colliderect(j)):
-                return True
-    return False
-
+#Screen
 def screenLeft():
     global camCenter
     camCenter += spdx
@@ -105,7 +105,6 @@ def screenLeft():
     else:
         bgLeft()
         floorLeft()
-
 def screenRight():
     global camCenter
     camCenter -= spdx
@@ -119,6 +118,15 @@ def screenRight():
         bgRight()
         floorRight()
 
+#Collision
+def collideFloor():
+    for i in floor:
+        for j in i:
+            if(ME.colliderect(j)):
+                return True
+    return False
+
+##Draw & Update
 def draw():
     screen.clear()
     for i in range(5):
