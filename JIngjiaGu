@@ -1,0 +1,157 @@
+import pgzrun
+import types
+##Initialize
+WIDTH,HEIGHT = 384,216
+TIME = 0
+runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
+bg = [] #Background
+ground = [] #Ground and layer1
+spdx = 2 #Speed of moves
+
+##Import images
+#Character
+for i in range(8):
+    runrset.append('run\\runr\\right'+str(i))
+    runlset.append('run\\runl\\left'+str(i))
+for i in range(12):
+    idlerset.append('idle\\idler\\idler'+str(i))
+    idlelset.append('idle\\idlel\\idlel'+str(i))
+#Background
+for i in range(5):
+    bg.append(Actor("background\\plx-" + str(i+1)))
+#Floor
+for i in range(50):
+    ground.append(Actor('tileset\\ground'))
+
+##Setup Character
+PLAYER = Actor('idle\idler\idler0')
+PLAYER.jumph = 0
+PLAYER.frame = 0
+PLAYER.state = 'IDLE'
+PLAYER.direction = 'RIGHT'
+
+##Setup map
+def initializeMap():
+    #Player
+    PLAYER.topleft = 0,0
+    #Background
+    for i in range(5):
+        bg[i].topleft = 0,0
+    #Floor
+    for i in range(50):
+        ground[i].topright = (i+1)*(ground[i].width-5),HEIGHT - ground[i].height + 2
+
+
+##Combine Lists
+everything = ground + bg
+
+##Actor Moves
+#Infinite Moves
+def moveLeft(act,mode=0): ##Mode 0: Infinite Move; Mode 1: Bordered Move
+    if(mode == 1 and act.left <= 0):
+        return
+    act.left -= spdx
+    if(mode == 0 and act.right < 0):
+        act.left = WIDTH-2
+
+def moveRight(act,mode=0):
+    if(mode == 1 and act.right >= WIDTH):
+        return
+    act.left += spdx
+    if(mode == 0 and act.left > WIDTH):
+        act.right = 2
+
+
+#Collision
+def collideFloor():
+    for i in ground:
+        if(PLAYER.colliderect(i) and i.top-spdx<= PLAYER.bottom <= i.top+spdx):
+            return True
+    return False
+
+## Set Attribute
+PLAYER.__setattr__('moveRight',types.MethodType(moveRight,PLAYER))
+PLAYER.__setattr__('moveLeft',types.MethodType(moveLeft,PLAYER))
+
+def drawStage1():
+    for i in bg:
+        i.draw()
+    for i in ground:
+        i.draw()
+##Draw & Update
+def draw():
+    screen.clear()
+    drawStage1()
+    PLAYER.draw()
+
+def update():
+    global PLAYER
+    PLAYER.floor = collideFloor()
+    ##JUMP
+    if(keyboard.up and PLAYER.state != 'FALL' and PLAYER.state != 'JUMP'):
+        PLAYER.jumph = 0
+        PLAYER.state = 'JUMP'
+    if(PLAYER.state == 'JUMP'):
+        if(PLAYER.direction == 'RIGHT'):
+            PLAYER.image = 'jump\\jumpr'
+        elif (PLAYER.direction == 'LEFT'):
+            PLAYER.image = 'jump\\jumpl'
+        PLAYER.top -= spdx*1.5
+        PLAYER.jumph += spdx*1.5
+        if(keyboard.right):
+            PLAYER.direction = 'RIGHT'
+            PLAYER.right += spdx
+        elif(keyboard.left):
+            PLAYER.direction = 'LEFT'
+            PLAYER.left -= spdx
+        if(PLAYER.jumph >= 80):
+            PLAYER.state = 'FALL'
+        return
+    if not PLAYER.floor:
+        PLAYER.state = 'FALL'
+    if(PLAYER.state == 'FALL'):
+        if(PLAYER.direction == 'RIGHT'):
+            PLAYER.image = 'landing\\landingr'
+        elif (PLAYER.direction == 'LEFT'):
+            PLAYER.image = 'landing\\landingl'
+        PLAYER.top += spdx*1.5
+        PLAYER.jumph -= spdx*1.5
+        if(keyboard.right):
+            PLAYER.direction = 'RIGHT'
+            PLAYER.right += spdx
+        elif(keyboard.left):
+            PLAYER.direction = 'LEFT'
+            PLAYER.left -= spdx
+        if collideFloor():
+            PLAYER.state = 'IDLE'
+        return
+    ##MOVE RIGHT
+    if(keyboard.right):
+        if(PLAYER.state != 'RUN'):
+            PLAYER.frame = 0
+        PLAYER.state,PLAYER.direction = 'RUN','RIGHT'
+        PLAYER.frame += 0.25
+        PLAYER.image = runrset[int(PLAYER.frame)%8]
+        PLAYER.right += spdx
+        return
+    ##MOVE LEFT
+    elif(keyboard.left):
+        if(PLAYER.state != 'RUN'):
+            PLAYER.frame = 0
+        PLAYER.state,PLAYER.direction = 'RUN','LEFT'
+        PLAYER.frame += 0.25
+        PLAYER.image = runlset[int(PLAYER.frame)%8]
+        PLAYER.left -= spdx
+        return
+    if(PLAYER.state != 'IDLE'):
+        PLAYER.frame = 0
+    PLAYER.state = 'IDLE'
+    ##IDLE
+    if(PLAYER.state == 'IDLE' and PLAYER.direction == 'LEFT'):
+        PLAYER.frame += 0.25
+        PLAYER.image = idlelset[int(PLAYER.frame)%12]
+    elif(PLAYER.state == 'IDLE' and PLAYER.direction == 'RIGHT'):
+        PLAYER.frame += 0.25
+        PLAYER.image = idlerset[int(PLAYER.frame)%12]
+initializeMap()
+pgzrun.go()
