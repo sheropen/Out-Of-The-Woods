@@ -1,12 +1,12 @@
 import pgzrun
 import types
 ##Initialize
-WIDTH,HEIGHT = 384,216
+WIDTH,HEIGHT = 768,432
 TIME = 0
 runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
 bg1,bg2 = [],[] #Background
 ground,layer1 = [],[] #Ground and layer1
-spdx = 2 #Speed of moves
+spdx = 3 #Speed of moves
 
 ##Import images
 #Character
@@ -27,11 +27,11 @@ for i in range(10):
     layer1.append(Actor('tileset\\ground'))        
 
 ##Setup Character
-PLAYER = Actor('idle\idler\idler0')
+PLAYER = Actor('idle\idlel\idlel0')
 PLAYER.jumph = 0
 PLAYER.frame = 0
 PLAYER.state = 'IDLE'
-PLAYER.direction = 'RIGHT'
+PLAYER.direction = 'LEFT'
 
 ##Setup map
 def initializeMap():
@@ -64,14 +64,14 @@ def moveLeft(act,mode=0): ##Mode 0: Infinite Move; Mode 1: Bordered Move
         return
     act.left -= spdx
     if(mode == 0 and act.right < 0):
-        act.left = WIDTH-2
+        act.left = WIDTH-spdx
 
 def moveRight(act,mode=0):
     if(mode == 1 and act.right >= WIDTH):
         return
     act.left += spdx
     if(mode == 0 and act.left > WIDTH):
-        act.right = 2
+        act.right = spdx
 
 ## Move in group
 #Background
@@ -118,7 +118,7 @@ def screenRight():
 #Collision
 def collideFloor():
     for i in tiles:
-        if(PLAYER.colliderect(i) and i.top-spdx<= PLAYER.bottom <= i.top+spdx):
+        if(PLAYER.colliderect(i) and i.top-4*spdx<= PLAYER.bottom <= i.top+4*spdx):
             return True
     return False
 
@@ -157,7 +157,7 @@ def update():
         elif(keyboard.left):
             PLAYER.direction = 'LEFT'
             screenRight()
-        if(PLAYER.jumph >= 80):
+        if(PLAYER.jumph >= PLAYER.height + 2*ground[0].height):
             PLAYER.state = 'FALL'
         return
     if not PLAYER.floor:
