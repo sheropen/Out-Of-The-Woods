@@ -1,0 +1,99 @@
+import pgzrun
+import random
+
+#Initialize
+WIDTH,HEIGHT = 768,432
+TIME = 0
+names = ["a","b","s","u","j","e"]
+idlerset,ground = [],[]
+garbage = []
+words = {}
+flag = False
+
+##Import images
+#Character
+for i in range(12):
+    idlerset.append('idle\\idler\\idler'+str(i))
+#Floor
+for i in range(50):
+    ground.append(Actor('tileset\\ground'))
+
+##Setup Character
+#PLAYER
+PLAYER = Actor('idle\idler\idler0')
+PLAYER.jumph = 0
+PLAYER.frame = 0
+PLAYER.state = 'IDLE'
+PLAYER.direction = 'RIGHT'
+#BOSS
+BOSS = Actor("soul_reaper\\idle")
+
+def initializeMap():
+    #Player and boss
+    PLAYER.bottomleft = PLAYER.width*3,HEIGHT-ground[0].height
+    BOSS.bottomright = WIDTH,HEIGHT
+    #Floor
+    for i in range(50):
+        ground[i].topright = (i+1)*(ground[i].width-5),HEIGHT - ground[i].height + 2
+    
+def PLAYER_idle():
+    PLAYER.frame += 0.25
+    PLAYER.image = idlerset[int(PLAYER.frame)%12]
+
+def PLAYER_injured():
+    PLAYER.image="player_injured"
+
+def BOSS_idle():
+    BOSS.image="soul_reaper\\idle"
+
+def BOSS_injured():
+    BOSS.image="soul_reaper\\injured"
+    clock.schedule_unique(BOSS_idle,1.0)
+
+def on_key_down(key):
+    global flag
+    flag=key.name.lower()
+
+def drawStage3():
+    for i in range(4):
+        screen.blit(('background\\plx-'+str(i+1)),(0,0))
+    for i in ground:
+        i.draw()
+    PLAYER.draw()
+    BOSS.draw()
+
+def draw():
+    screen.clear()
+    drawStage3()
+    for i in words:
+        tmp = words[i]
+        tmp.draw()
+    
+def update():
+    global flag,key_pressed,TIME
+    TIME += 1
+    PLAYER_idle()
+    if TIME % 60 == 0:
+        x=random.choice(names)
+        y=str.upper(x)
+        t=Actor('alphabets\\'+x)
+        words[x]=t
+    for i in words:
+        v=words[i]
+        v.left += 5
+        if v.left>=WIDTH:
+            garbage.append(i)
+            clock.schedule_unique(PLAYER_injured,1.0)
+    if flag in words:
+        del words[flag]
+        BOSS_injured()
+        flag = False
+    else:
+        if flag:
+            clock.schedule_unique(PLAYER_injured,1.0)
+            flag= False
+
+initializeMap()
+sounds.music.play(loops=10)
+sounds.music.set_volume(0.2)
+pgzrun.go()
