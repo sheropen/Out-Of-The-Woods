@@ -1,97 +1,93 @@
 import pgzrun
-
-#Initialize global variable
-WIDTH = 384
-HEIGHT = 216
-rframe,lframe,iframe = 0,0,0 #Determine the current frame of character action
+import types
+##Initialize
+WIDTH,HEIGHT = 384,216
 TIME = 0
-STATE = 'IDLE' #Character Status
-DIRECTION = 'RIGHT' #Character Heading
 runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
 bg1,bg2 = [],[] #Background
-ground,layer2 = [],[] #Ground and layer2
-jumph = 0 #Current Jumping Height
+ground,layer1 = [],[] #Ground and layer1
 spdx = 2 #Speed of moves
 
-#Setup actions' animation
+##Import images
+#Character
 for i in range(8):
     runrset.append('run\\runr\\right'+str(i))
     runlset.append('run\\runl\\left'+str(i))
 for i in range(12):
     idlerset.append('idle\\idler\\idler'+str(i))
     idlelset.append('idle\\idlel\\idlel'+str(i))
-
-##Setup Character
-ME = Actor('idle\idler\idler0')
-
-##Setup background
+#Background
 for i in range(5):
     bg1.append(Actor("background\\plx-" + str(i+1)))
     bg2.append(Actor("background\\plx-" + str(i+1)))
-    bg1[i].topright = WIDTH*0.5,0
-    bg2[i].topleft = WIDTH*0.5,0
-
-##Setup floor
+#Floor
 for i in range(50):
     ground.append(Actor('tileset\\ground'))
-    ground[i].topright = (i+1)*81,HEIGHT - 18
-
-##Setup second layer
 for i in range(10):
-    layer2.append(Actor('tileset\\ground'))
-    layer2[i].bottomright = 5*(i+1)*81,HEIGHT - ME.height*1.7
+    layer1.append(Actor('tileset\\ground'))        
 
-player_width = 17
+##Setup Character
+PLAYER = Actor('idle\idler\idler0')
+PLAYER.jumph = 0
+PLAYER.frame = 0
+PLAYER.state = 'IDLE'
+PLAYER.direction = 'RIGHT'
+
+##Setup map
+def initializeMap():
+    #Player
+    PLAYER.topleft = 0,0
+    #Background
+    for i in range(5):
+        bg1[i].topright = WIDTH*0.5,0
+        bg2[i].topleft = WIDTH*0.5,0
+
+    #Floor
+    for i in range(50):
+        ground[i].topright = (i+1)*(ground[i].width-5),HEIGHT - ground[i].height + 2
+    for i in range(10):
+        layer1[i].bottomright = 5*(i+1)*(ground[i].width),HEIGHT - PLAYER.height-ground[i].height+2
+
 rightLimit,leftLimit = 50*81-WIDTH/2,WIDTH/2 
-rightBorder,leftBorder = 50*81-player_width,player_width
-floor = [ground,layer2]
-all_elements = [bg1,bg2,ground,layer2]
-ME.topleft = 0,0
+rightBorder,leftBorder = 50*81-PLAYER.width,PLAYER.width
 camCenter = leftBorder
+
+##Combine Lists
+tiles = ground + layer1
+bg = bg1 + bg2
+everything = tiles + bg
 
 ##Actor Moves
 #Infinite Moves
-def moveLeft(act):
+def moveLeft(act,mode=0): ##Mode 0: Infinite Move; Mode 1: Bordered Move
+    if(mode == 1 and act.left <= 0):
+        return
     act.left -= spdx
-    if act.right < 0:
+    if(mode == 0 and act.right < 0):
         act.left = WIDTH-2
-def moveRight(act):
+
+def moveRight(act,mode=0):
+    if(mode == 1 and act.right >= WIDTH):
+        return
     act.left += spdx
-    if act.left > WIDTH:
+    if(mode == 0 and act.left > WIDTH):
         act.right = 2
-#Player Moves
-def playerMoveLeft(act):
-    if act.left <= 0:
-        return
-    else:
-        act.left -= spdx
-def playerMoveRight(act):
-    if act.right >= WIDTH:
-        return
-    else:
-        act.left += spdx
 
 ## Move in group
 #Background
 def bgLeft():
-    for i in bg1:
-        moveLeft(i)
-    for i in bg2:
+    for i in bg:
         moveLeft(i)
 def bgRight():
-    for i in bg1:
-        moveRight(i)
-    for i in bg2:
+    for i in bg:
         moveRight(i)
 #Floor
 def floorLeft():
-    for i in floor:
-        for j in i:
-            j.left -= spdx
+    for i in tiles:
+        i.left -= spdx
 def floorRight():
-    for i in floor:
-        for j in i:
-            j.left += spdx
+    for i in tiles:
+        i.left += spdx
 
 #Screen
 def screenLeft():
@@ -100,9 +96,9 @@ def screenLeft():
     if(camCenter > rightBorder):
         camCenter = rightBorder
     if(rightLimit <= camCenter):
-        playerMoveRight(ME)
+        PLAYER.moveRight(1)
     elif(camCenter <= leftLimit):
-        playerMoveRight(ME)
+        PLAYER.moveRight(1)
     else:
         bgLeft()
         floorLeft()
@@ -112,105 +108,103 @@ def screenRight():
     if(camCenter < leftBorder):
         camCenter = leftBorder
     if(camCenter <= leftLimit):
-        playerMoveLeft(ME)
+        PLAYER.moveLeft(1)
     elif(rightLimit <= camCenter):
-        playerMoveLeft(ME)
+        PLAYER.moveLeft(1)
     else:
         bgRight()
         floorRight()
 
 #Collision
 def collideFloor():
-    for i in floor:
-        for j in i:
-            if(ME.colliderect(j) and j.top-spdx<= ME.bottom <= j.top+spdx):
-                return True
+    for i in tiles:
+        if(PLAYER.colliderect(i) and i.top-spdx<= PLAYER.bottom <= i.top+spdx):
+            return True
     return False
 
+## Set Attribute
+PLAYER.__setattr__('moveRight',types.MethodType(moveRight,PLAYER))
+PLAYER.__setattr__('moveLeft',types.MethodType(moveLeft,PLAYER))
+
+def drawStage1():
+    for i in bg:
+        i.draw()
+    for i in tiles:
+        i.draw()
 ##Draw & Update
 def draw():
     screen.clear()
-    for i in range(5):
-        bg1[i].draw()
-        bg2[i].draw()
-    for i in ground:
-        i.draw()
-    for i in layer2:
-        i.draw()
-    ME.draw()
+    drawStage1()
+    PLAYER.draw()
 
 def update():
-    global STATE,DIRECTION,rframe,lframe,iframe,jumph,myCenter
+    global PLAYER
+    PLAYER.floor = collideFloor()
     ##JUMP
-    if(keyboard.up and STATE != 'FALL'):
-        if(STATE != 'JUMP'):
-            jumph = 0
-        STATE = 'JUMP'
-    if(STATE == 'JUMP'):
-        if(DIRECTION == 'RIGHT'):
-            ME.image = 'jump\\jumpr'
-        elif (DIRECTION == 'LEFT'):
-            ME.image = 'jump\\jumpl'
-        ME.top -= spdx*1.5
-        jumph += spdx*1.5
+    if(keyboard.up and PLAYER.state != 'FALL' and PLAYER.state != 'JUMP'):
+        PLAYER.jumph = 0
+        PLAYER.state = 'JUMP'
+    if(PLAYER.state == 'JUMP'):
+        if(PLAYER.direction == 'RIGHT'):
+            PLAYER.image = 'jump\\jumpr'
+        elif (PLAYER.direction == 'LEFT'):
+            PLAYER.image = 'jump\\jumpl'
+        PLAYER.top -= spdx*1.5
+        PLAYER.jumph += spdx*1.5
         if(keyboard.right):
-            DIRECTION = 'RIGHT'
-            if not collideFloor():
-                screenLeft()
+            PLAYER.direction = 'RIGHT'
+            screenLeft()
         elif(keyboard.left):
-            DIRECTION = 'LEFT'
-            if not collideFloor():
-                screenRight()
-        if(jumph >= 80):
-            STATE = 'FALL'
+            PLAYER.direction = 'LEFT'
+            screenRight()
+        if(PLAYER.jumph >= 80):
+            PLAYER.state = 'FALL'
         return
-    if not collideFloor():
-        STATE = 'FALL'
-    if(STATE == 'FALL'):
-        if(DIRECTION == 'RIGHT'):
-            ME.image = 'landing\\landingr'
-        elif (DIRECTION == 'LEFT'):
-            ME.image = 'landing\\landingl'
-        ME.top += spdx*1.5
-        jumph -= spdx*1.5
+    if not PLAYER.floor:
+        PLAYER.state = 'FALL'
+    if(PLAYER.state == 'FALL'):
+        if(PLAYER.direction == 'RIGHT'):
+            PLAYER.image = 'landing\\landingr'
+        elif (PLAYER.direction == 'LEFT'):
+            PLAYER.image = 'landing\\landingl'
+        PLAYER.top += spdx*1.5
+        PLAYER.jumph -= spdx*1.5
         if(keyboard.right):
-            DIRECTION = 'RIGHT'
-            if not collideFloor():
-                screenLeft()
+            PLAYER.direction = 'RIGHT'
+            screenLeft()
         elif(keyboard.left):
-            DIRECTION = 'LEFT'
-            if not collideFloor():    
-                screenRight()
+            PLAYER.direction = 'LEFT'
+            screenRight()
         if collideFloor():
-            STATE = 'IDLE'
+            PLAYER.state = 'IDLE'
         return
     ##MOVE RIGHT    
     if(keyboard.right):
-        iframe = 0
-        if(STATE != 'RUN' or DIRECTION != 'RIGHT'):
-            rframe = 0
-        STATE,DIRECTION = 'RUN','RIGHT'
-        rframe += 0.25
-        ME.image = runrset[int(rframe)%8]
+        if(PLAYER.state != 'RUN'):
+            PLAYER.frame = 0
+        PLAYER.state,PLAYER.direction = 'RUN','RIGHT'
+        PLAYER.frame += 0.25
+        PLAYER.image = runrset[int(PLAYER.frame)%8]
         screenLeft()
         return
     ##MOVE LEFT
     elif(keyboard.left): 
-        iframe = 0
-        if(STATE != 'RUN' or DIRECTION != 'LEFT'):
-            lframe = 0
-        STATE,DIRECTION = 'RUN','LEFT'
-        lframe += 0.25
-        ME.image = runlset[int(lframe)%8]
+        if(PLAYER.state != 'RUN'):
+            PLAYER.frame = 0
+        PLAYER.state,PLAYER.direction = 'RUN','LEFT'
+        PLAYER.frame += 0.25
+        PLAYER.image = runlset[int(PLAYER.frame)%8]
         screenRight()
         return
-    STATE = 'IDLE'
+    if(PLAYER.state != 'IDLE'):
+        PLAYER.frame = 0
+    PLAYER.state = 'IDLE'
     ##IDLE
-    if(STATE == 'IDLE' and DIRECTION == 'LEFT'): 
-        iframe += 0.25
-        ME.image = idlelset[int(iframe)%12]
-    elif(STATE == 'IDLE' and DIRECTION == 'RIGHT'):
-        iframe += 0.25
-        ME.image = idlerset[int(iframe)%12]
-
+    if(PLAYER.state == 'IDLE' and PLAYER.direction == 'LEFT'): 
+        PLAYER.frame += 0.25
+        PLAYER.image = idlelset[int(PLAYER.frame)%12]
+    elif(PLAYER.state == 'IDLE' and PLAYER.direction == 'RIGHT'):
+        PLAYER.frame += 0.25
+        PLAYER.image = idlerset[int(PLAYER.frame)%12]
+initializeMap()
 pgzrun.go()
