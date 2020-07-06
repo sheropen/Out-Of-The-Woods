@@ -1,12 +1,12 @@
 import pgzrun
 import types
 ##Initialize
-WIDTH,HEIGHT = 384,216
+WIDTH,HEIGHT = 768,432
 TIME = 0
 runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
 bg = [] #Background
 ground = [] #Ground and layer1
-spdx = 2 #Speed of moves
+spdx = 3 #Speed of moves
 
 ##Import images
 #Character
@@ -52,20 +52,20 @@ def moveLeft(act,mode=0): ##Mode 0: Infinite Move; Mode 1: Bordered Move
         return
     act.left -= spdx
     if(mode == 0 and act.right < 0):
-        act.left = WIDTH-2
+        act.left = WIDTH-spdx
 
 def moveRight(act,mode=0):
     if(mode == 1 and act.right >= WIDTH):
         return
     act.left += spdx
     if(mode == 0 and act.left > WIDTH):
-        act.right = 2
+        act.right = spdx
 
 
 #Collision
 def collideFloor():
     for i in ground:
-        if(PLAYER.colliderect(i) and i.top-spdx<= PLAYER.bottom <= i.top+spdx):
+        if(PLAYER.colliderect(i) and i.top-4*spdx<= PLAYER.bottom <= i.top+4*spdx):
             return True
     return False
 
@@ -100,11 +100,9 @@ def update():
         PLAYER.jumph += spdx*1.5
         if(keyboard.right):
             PLAYER.direction = 'RIGHT'
-            PLAYER.right += spdx
         elif(keyboard.left):
             PLAYER.direction = 'LEFT'
-            PLAYER.left -= spdx
-        if(PLAYER.jumph >= 80):
+        if(PLAYER.jumph >= PLAYER.height + 2*ground[0].height):
             PLAYER.state = 'FALL'
         return
     if not PLAYER.floor:
@@ -118,10 +116,8 @@ def update():
         PLAYER.jumph -= spdx*1.5
         if(keyboard.right):
             PLAYER.direction = 'RIGHT'
-            PLAYER.right += spdx
         elif(keyboard.left):
             PLAYER.direction = 'LEFT'
-            PLAYER.left -= spdx
         if collideFloor():
             PLAYER.state = 'IDLE'
         return
@@ -132,7 +128,7 @@ def update():
         PLAYER.state,PLAYER.direction = 'RUN','RIGHT'
         PLAYER.frame += 0.25
         PLAYER.image = runrset[int(PLAYER.frame)%8]
-        PLAYER.right += spdx
+        PLAYER.moveRight(1)
         return
     ##MOVE LEFT
     elif(keyboard.left):
@@ -141,7 +137,7 @@ def update():
         PLAYER.state,PLAYER.direction = 'RUN','LEFT'
         PLAYER.frame += 0.25
         PLAYER.image = runlset[int(PLAYER.frame)%8]
-        PLAYER.left -= spdx
+        PLAYER.moveLeft(1)
         return
     if(PLAYER.state != 'IDLE'):
         PLAYER.frame = 0
