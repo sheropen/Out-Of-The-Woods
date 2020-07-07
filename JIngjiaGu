@@ -5,11 +5,12 @@ WIDTH,HEIGHT = 768,432
 TIME = 0
 runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
 bg = [] #Background
-ground = [] #Ground
 floor = [] #Floor
 star = []
+countstar = []
 spdx = 3 #Speed of moves
 door = Actor('door')
+starsum = 0
 
 ##Import images
 #Character
@@ -22,15 +23,15 @@ for i in range(12):
 #Background
 for i in range(5):
     bg.append(Actor("background\\plx-" + str(i+1)))
-#Ground
-for i in range(50):
-    ground.append(Actor('tileset\\ground'))
 #Floor
 for i in range(2):
     floor.append(Actor('tileset\\ground'))
 #Star
 for i in range(3):
     star.append(Actor('star'))
+#Countstar
+for i in range(3):
+    countstar.append(Actor('greystar'))
 
 
 
@@ -45,28 +46,24 @@ PLAYER.direction = 'RIGHT'
 
 ##Setup map
 def initializeMap():
-    #Player
-    PLAYER.topleft = 0,0
     #Background
     for i in range(5):
         bg[i].topleft = 0,0
-    #Ground
-    for i in range(50):
-        ground[i].topright = (i+1)*(ground[i].width-5),HEIGHT - ground[i].height + 2
     #Floor
-    floor[0].bottomright = WIDTH * 0.5, HEIGHT - PLAYER.height - ground[i].height + 2
-    floor[1].bottomleft = WIDTH * 0.5, HEIGHT - PLAYER.height - ground[i].height + 2
+    floor[0].bottomright = WIDTH * 0.5, HEIGHT - PLAYER.height - floor[0].height + 2
+    floor[1].bottomleft = WIDTH * 0.5, HEIGHT - PLAYER.height - floor[0].height + 2
     #Door
     door.bottomright = floor[1].right, floor[1].top + 5
+    # Player
+    PLAYER.bottomleft = floor[0].topleft
     #Star
     for i in range(3):
         star[i].bottomleft = floor[0].left + PLAYER.width + (i + 1) * 60, floor[0].top - 10
+    #Countstar
+    for i in range(3):
+        countstar[i].midtop = WIDTH * 0.5 + (i - 1) * 60, 30
 
 
-
-
-##Combine Lists
-allground = ground + floor
 
 ##Actor Moves
 #Infinite Moves
@@ -87,7 +84,7 @@ def moveRight(act,mode=0):
 
 #Collision
 def collideFloor():
-    for i in allground:
+    for i in floor:
         if(PLAYER.colliderect(i) and i.top-4*spdx<= PLAYER.bottom <= i.top+4*spdx):
             return True
     return False
@@ -100,11 +97,11 @@ PLAYER.__setattr__('moveLeft',types.MethodType(moveLeft,PLAYER))
 def drawStage1():
     for i in bg:
         i.draw()
-    for i in ground:
-        i.draw()
     for i in floor:
         i.draw()
     for i in star:
+        i.draw()
+    for i in countstar:
         i.draw()
 ##Draw & Update
 def draw():
@@ -113,13 +110,24 @@ def draw():
     door.draw()
     PLAYER.draw()
 
+
+##Restart
+def StageRestart():
+    global starsum
+    initializeMap()
+    starsum = 0
+
+
+
 def update():
-    global PLAYER
+    global PLAYER, starsum
     PLAYER.floor = collideFloor()
     ##Pick Star
     for i in star:
         if PLAYER.colliderect(i):
             star.remove(i)
+            starsum += 1
+            countstar[starsum - 1].image = 'brightstar'
     ##JUMP
     if(keyboard.up and PLAYER.state != 'FALL' and PLAYER.state != 'JUMP'):
         PLAYER.jumph = 0
@@ -182,6 +190,15 @@ def update():
     elif(PLAYER.state == 'IDLE' and PLAYER.direction == 'RIGHT'):
         PLAYER.frame += 0.25
         PLAYER.image = idlerset[int(PLAYER.frame)%12]
+    ##Win or Lose
+    if starsum == 3 and PLAYER.colliderect(door):
+        print("You win!")
+    elif starsum < 3 and PLAYER.colliderect(door):
+        print("You lose! You haven't collected all the stars!")
+    if PLAYER.top >= 432:
+        print("You die!")
+
+
 
 initializeMap()
 pgzrun.go()
