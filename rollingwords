@@ -11,7 +11,7 @@ HP_BAR = []
 for i in range(21):
     HP_BAR.append('hp_bar\\'+str(i))
 idlerset,ground = [],[]
-spdx = 5
+spdx,fq = 5,30
 garbage = []
 words = {}
 flag = False
@@ -97,13 +97,12 @@ def draw():
         tmp.draw()
 
 def update():
-    global flag,key_pressed,TIME,count1
+    global flag,key_pressed,TIME,spdx
     TIME += 1
-    if BOSS.hp >= 10:
+    if BOSS.hp >= 13:
+        frq = BOSS.hp / 20 * 30
         spdx = 20 / BOSS.hp * 5
-    else:
-        spdx = 12
-    if TIME % 30 == 0:
+    if TIME % fq == 0:
         x=random.choice(letters)
         y=str.upper(x)
         t=Actor('alphabets\\'+x)
