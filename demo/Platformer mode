@@ -6,6 +6,7 @@ TIME = 0
 runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
 bg1,bg2 = [],[] #Background
 ground,layer1 = [],[] #Ground and layer1
+trap = []
 spdx = 3 #Speed of moves
 
 ##Import images
@@ -24,15 +25,32 @@ for i in range(5):
 for i in range(50):
     ground.append(Actor('tileset\\ground'))
 for i in range(10):
-    layer1.append(Actor('tileset\\ground'))        
+    layer1.append(Actor('tileset\\ground'))
+#Trap
+for i in range(2):
+    trap.append(Actor('trap'))        
 
 ##Setup Character
-PLAYER = Actor('idle\idlel\idlel0')
+PLAYER = Actor('idle\idler\idler0')
 PLAYER.jumph = 0
 PLAYER.frame = 0
 PLAYER.state = 'IDLE'
-PLAYER.direction = 'LEFT'
+PLAYER.direction = 'RIGHT'
 
+##Camera
+rightLimit,leftLimit = 50*81-WIDTH/2,WIDTH/2 
+rightBorder,leftBorder = 50*81-PLAYER.width,PLAYER.width
+camCenter = leftBorder
+##Initialize variables
+def initializeVariable():
+    global PLAYER,rightlimit,leftLimit,rightBorder,leftBorder,camCenter
+    PLAYER.jumph = 0
+    PLAYER.frame = 0
+    PLAYER.state = 'IDLE'
+    PLAYER.direction = 'RIGHT'
+    rightLimit,leftLimit = 50*81-WIDTH/2,WIDTH/2 
+    rightBorder,leftBorder = 50*81-PLAYER.width,PLAYER.width
+    camCenter = leftBorder
 ##Setup map
 def initializeMap():
     #Player
@@ -41,19 +59,18 @@ def initializeMap():
     for i in range(5):
         bg1[i].topright = WIDTH*0.5,0
         bg2[i].topleft = WIDTH*0.5,0
-
+    #Trap
+    trap[1].bottomleft = 0,HEIGHT-1
+    trap[0].bottomleft = ground[0].width,HEIGHT-1
     #Floor
     for i in range(50):
-        ground[i].topright = (i+1)*(ground[i].width-5),HEIGHT - ground[i].height + 2
+        ground[i].bottomright = (i+1)*(ground[i].width-5),HEIGHT
     for i in range(10):
         layer1[i].bottomright = 5*(i+1)*(ground[i].width),HEIGHT - PLAYER.height-ground[i].height+2
 
-rightLimit,leftLimit = 50*81-WIDTH/2,WIDTH/2 
-rightBorder,leftBorder = 50*81-PLAYER.width,PLAYER.width
-camCenter = leftBorder
-
 ##Combine Lists
-tiles = ground + layer1
+floor = ground + layer1
+tiles = trap + floor
 bg = bg1 + bg2
 everything = tiles + bg
 
@@ -82,10 +99,10 @@ def bgRight():
     for i in bg:
         moveRight(i)
 #Floor
-def floorLeft():
+def tilesLeft():
     for i in tiles:
         i.left -= spdx
-def floorRight():
+def tilesRight():
     for i in tiles:
         i.left += spdx
 
@@ -101,7 +118,7 @@ def screenLeft():
         PLAYER.moveRight(1)
     else:
         bgLeft()
-        floorLeft()
+        tilesLeft()
 def screenRight():
     global camCenter
     camCenter -= spdx
@@ -113,32 +130,53 @@ def screenRight():
         PLAYER.moveLeft(1)
     else:
         bgRight()
-        floorRight()
+        tilesRight()
 
-#Collision
+#Interaction
 def collideFloor():
-    for i in tiles:
+    for i in floor:
         if(PLAYER.colliderect(i) and i.top-4*spdx<= PLAYER.bottom <= i.top+4*spdx):
             return True
     return False
+def playerLose():
+    global PLAYER
+    for i in trap:
+        if(PLAYER.colliderect(i)):
+            i.top -= 30
+            return True
+    return False
 
-## Set Attribute
+##Set Attribute
 PLAYER.__setattr__('moveRight',types.MethodType(moveRight,PLAYER))
 PLAYER.__setattr__('moveLeft',types.MethodType(moveLeft,PLAYER))
+
+##Restart Stage
+def restartStage():
+    initializeVariable()
+    initializeMap()
 
 def drawStage1():
     for i in bg:
         i.draw()
+    for i in trap:
+        i.draw()    
     for i in tiles:
         i.draw()
 ##Draw & Update
 def draw():
-    screen.clear()
     drawStage1()
     PLAYER.draw()
 
 def update():
     global PLAYER
+    if(PLAYER.state == 'DEAD'):
+        return
+    ##Interactions
+    if(playerLose()):
+        PLAYER.state = 'DEAD'
+        clock.schedule(restartStage,0.25)
+        return
+    #On Floor
     PLAYER.floor = collideFloor()
     ##JUMP
     if(keyboard.up and PLAYER.state != 'FALL' and PLAYER.state != 'JUMP'):
