@@ -5,8 +5,11 @@ WIDTH,HEIGHT = 768,432
 TIME = 0
 runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
 bg = [] #Background
-ground = [] #Ground and layer1
+ground = [] #Ground
+floor = [] #Floor
+star = []
 spdx = 3 #Speed of moves
+door = Actor('door')
 
 ##Import images
 #Character
@@ -19,9 +22,17 @@ for i in range(12):
 #Background
 for i in range(5):
     bg.append(Actor("background\\plx-" + str(i+1)))
-#Floor
+#Ground
 for i in range(50):
     ground.append(Actor('tileset\\ground'))
+#Floor
+for i in range(2):
+    floor.append(Actor('tileset\\ground'))
+#Star
+for i in range(3):
+    star.append(Actor('star'))
+
+
 
 ##Setup Character
 PLAYER = Actor('idle\idler\idler0')
@@ -30,6 +41,8 @@ PLAYER.frame = 0
 PLAYER.state = 'IDLE'
 PLAYER.direction = 'RIGHT'
 
+
+
 ##Setup map
 def initializeMap():
     #Player
@@ -37,13 +50,23 @@ def initializeMap():
     #Background
     for i in range(5):
         bg[i].topleft = 0,0
-    #Floor
+    #Ground
     for i in range(50):
         ground[i].topright = (i+1)*(ground[i].width-5),HEIGHT - ground[i].height + 2
+    #Floor
+    floor[0].bottomright = WIDTH * 0.5, HEIGHT - PLAYER.height - ground[i].height + 2
+    floor[1].bottomleft = WIDTH * 0.5, HEIGHT - PLAYER.height - ground[i].height + 2
+    #Door
+    door.bottomright = floor[1].right, floor[1].top + 5
+    #Star
+    for i in range(3):
+        star[i].bottomleft = floor[0].left + PLAYER.width + (i + 1) * 60, floor[0].top - 10
+
+
 
 
 ##Combine Lists
-everything = ground + bg
+allground = ground + floor
 
 ##Actor Moves
 #Infinite Moves
@@ -64,10 +87,11 @@ def moveRight(act,mode=0):
 
 #Collision
 def collideFloor():
-    for i in ground:
+    for i in allground:
         if(PLAYER.colliderect(i) and i.top-4*spdx<= PLAYER.bottom <= i.top+4*spdx):
             return True
     return False
+
 
 ## Set Attribute
 PLAYER.__setattr__('moveRight',types.MethodType(moveRight,PLAYER))
@@ -78,15 +102,24 @@ def drawStage1():
         i.draw()
     for i in ground:
         i.draw()
+    for i in floor:
+        i.draw()
+    for i in star:
+        i.draw()
 ##Draw & Update
 def draw():
     screen.clear()
     drawStage1()
+    door.draw()
     PLAYER.draw()
 
 def update():
     global PLAYER
     PLAYER.floor = collideFloor()
+    ##Pick Star
+    for i in star:
+        if PLAYER.colliderect(i):
+            star.remove(i)
     ##JUMP
     if(keyboard.up and PLAYER.state != 'FALL' and PLAYER.state != 'JUMP'):
         PLAYER.jumph = 0
@@ -149,5 +182,6 @@ def update():
     elif(PLAYER.state == 'IDLE' and PLAYER.direction == 'RIGHT'):
         PLAYER.frame += 0.25
         PLAYER.image = idlerset[int(PLAYER.frame)%12]
+
 initializeMap()
 pgzrun.go()
