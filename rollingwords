@@ -13,7 +13,7 @@ for i in range(21):
 idlerset,ground = [],[]
 spdx,fq = 5,30
 garbage = []
-words = {}
+words = [] 
 flag = False
 ##Import images
 #Character
@@ -93,8 +93,7 @@ def draw():
     screen.clear()
     drawStage3()
     for i in words:
-        tmp = words[i]
-        tmp.draw()
+        i.draw()
 
 def update():
     global flag,key_pressed,TIME,spdx
@@ -106,16 +105,15 @@ def update():
         x=random.choice(letters)
         y=str.upper(x)
         t=Actor('alphabets\\'+x)
-        words[x]=t
+        t.name = x
+        words.append(t)
     for i in words:
-        v=words[i]
-        v.left += spdx
-        if v.left>=WIDTH:
-           garbage.append(i)
+        i.left += spdx
+        if i.left>=WIDTH:
+           words.remove(i)
            PLAYER_injured()
-
-    if flag in words:
-        del words[flag]
+    if(words != [] and words[0].name == flag):
+        words.remove(words[0])
         BOSS_injured()
         flag = False
     else:
