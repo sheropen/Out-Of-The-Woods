@@ -42,6 +42,7 @@ def PLAYER_idle():
 
 def PLAYER_injured():
     PLAYER.image="player_injured"
+    clock.schedule_unique(PLAYER_idle,1.0)
 
 def BOSS_idle():
     BOSS.image="soul_reaper\\idle"
@@ -72,7 +73,6 @@ def draw():
 def update():
     global flag,key_pressed,TIME
     TIME += 1
-    PLAYER_idle()
     if TIME % 60 == 0:
         x=random.choice(names)
         y=str.upper(x)
@@ -90,7 +90,7 @@ def update():
         flag = False
     else:
         if flag:
-            clock.schedule_unique(PLAYER_injured,1.0)
+            PLAYER_injured()
             flag= False
 
 initializeMap()
