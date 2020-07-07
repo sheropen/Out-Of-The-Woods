@@ -12,7 +12,6 @@ for i in range(21):
     HP_BAR.append('hp_bar\\'+str(i))
 idlerset,ground = [],[]
 spdx,fq = 5,30
-garbage = []
 words = [] 
 flag = False
 ##Import images
@@ -36,7 +35,21 @@ PLAYER.hpBar = Actor(HP_BAR[20])
 BOSS = Actor("soul_reaper\\idle")
 BOSS.hp = 20
 BOSS.hpBar = Actor(HP_BAR[20])
-
+def initializeVariable():
+    global TIME,PLAYER,BOSS,spdx,fq,words,flag
+    spdx,fq = 5,30
+    words = [] 
+    flag = False
+    PLAYER = Actor('idle\idler\idler0')
+    PLAYER.jumph = 0
+    PLAYER.frame = 0
+    PLAYER.state = 'IDLE'
+    PLAYER.direction = 'RIGHT'
+    PLAYER.hp = 20
+    PLAYER.hpBar = Actor(HP_BAR[20])
+    BOSS = Actor("soul_reaper\\idle")
+    BOSS.hp = 20
+    BOSS.hpBar = Actor(HP_BAR[20])
 def initializeMap():
     #Player and boss and Hp
     PLAYER.bottomleft = PLAYER.width*3,HEIGHT-ground[0].height
@@ -46,6 +59,10 @@ def initializeMap():
     #Floor
     for i in range(50):
         ground[i].topright = (i+1)*(ground[i].width-5),HEIGHT - ground[i].height + 2
+    
+def restartStage():
+    initializeVariable()
+    initializeMap()
 
 ##Character Status change
 def PLAYER_idle():
@@ -74,10 +91,23 @@ def BOSS_injured():
     BOSS.hpBar.image = HP_BAR[int(BOSS.hp)]
     clock.schedule_unique(BOSS_idle,1.0)
 
-##User Interaction
+## Interaction
 def on_key_down(key):
     global flag
     flag=key.name.lower()
+
+def playerLose():
+    if(PLAYER.hp <= 0):
+        return True
+    return False
+
+def playerWin():
+    if(BOSS.hp <= 0):
+        return True
+    return False
+
+def nextStage():
+    pass
 
 def drawStage3():
     for i in range(4):
@@ -96,8 +126,18 @@ def draw():
         i.draw()
 
 def update():
-    global flag,key_pressed,TIME,spdx
+    global PLAYER,flag,key_pressed,TIME,spdx
     TIME += 1
+    if(PLAYER.state == 'DEAD'):
+        return
+    if(playerWin()):
+        clock.schedule(restartStage,0.25)
+        return
+        #return nextStage()
+    if(playerLose()):
+        PLAYER.state = 'DEAD'
+        clock.schedule(restartStage,0.25)
+        return
     if BOSS.hp >= 13:
         frq = BOSS.hp / 20 * 30
         spdx = 20 / BOSS.hp * 5
@@ -121,7 +161,7 @@ def update():
             PLAYER_injured()
             flag= False
 
-initializeMap()
+restartStage()
 sounds.music.play(loops=10)
 sounds.music.set_volume(0.2)
 pgzrun.go()
