@@ -34,7 +34,7 @@ for i in range(2):
 PLAYER = Actor('idle\idler\idler0')
 PLAYER.jumph = 0
 PLAYER.frame = 0
-PLAYER.state = 'IDLE'
+PLAYER.state = 'FALL'
 PLAYER.direction = 'RIGHT'
 
 ##Camera
@@ -46,7 +46,7 @@ def initializeVariable():
     global PLAYER,rightlimit,leftLimit,rightBorder,leftBorder,camCenter
     PLAYER.jumph = 0
     PLAYER.frame = 0
-    PLAYER.state = 'IDLE'
+    PLAYER.state = 'FALL'
     PLAYER.direction = 'RIGHT'
     rightLimit,leftLimit = 50*81-WIDTH/2,WIDTH/2 
     rightBorder,leftBorder = 50*81-PLAYER.width,PLAYER.width
