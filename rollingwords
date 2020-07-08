@@ -35,6 +35,8 @@ PLAYER.hpBar = Actor(HP_BAR[20])
 BOSS = Actor("soul_reaper\\idle")
 BOSS.hp = 20
 BOSS.hpBar = Actor(HP_BAR[20])
+Bossattack = Actor("transparent")
+Heroattack= Actor("transparent")
 def initializeVariable():
     global TIME,PLAYER,BOSS,spdx,fq,words,flag
     spdx,fq = 5,30
@@ -56,6 +58,8 @@ def initializeMap():
     BOSS.bottomright = WIDTH,HEIGHT
     PLAYER.hpBar.center = (100,320)
     BOSS.hpBar.center = (590,130)
+    Bossattack.center=(-310,650)
+    Heroattack.center=(420,130)
     #Floor
     for i in range(50):
         ground[i].topright = (i+1)*(ground[i].width-5),HEIGHT - ground[i].height + 2
@@ -91,6 +95,8 @@ def BOSS_injured():
     BOSS.hpBar.image = HP_BAR[int(BOSS.hp)]
     clock.schedule_unique(BOSS_idle,1.0)
 
+
+
 ## Interaction
 def on_key_down(key):
     global flag
@@ -118,13 +124,25 @@ def drawStage3():
     PLAYER.hpBar.draw()
     BOSS.draw()
     BOSS.hpBar.draw()
+    Bossattack.draw()
+    Heroattack.draw()
 
 def draw():
     screen.clear()
     drawStage3()
     for i in words:
         i.draw()
+def bossattack():
+    Bossattack.image=("bossattack")
+    clock.schedule_unique(bossattacknormal,0.3)
+def bossattacknormal():
+    Bossattack.image=("transparent")
 
+def heroattack():
+    Heroattack.image=("heroattack")
+    clock.schedule_unique(heroattacknormal,0.3)
+def heroattacknormal():
+    Heroattack.image=("transparent")
 def update():
     global PLAYER,flag,key_pressed,TIME,spdx
     TIME += 1
@@ -136,11 +154,16 @@ def update():
         #return nextStage()
     if(playerLose()):
         PLAYER.state = 'DEAD'
+        PLAYER.image = "soul_reaper\\injured"
         clock.schedule(restartStage,0.25)
         return
     if BOSS.hp >= 13:
         frq = BOSS.hp / 20 * 30
         spdx = 20 / BOSS.hp * 5
+    elif BOSS.hp <13:
+        spdx = 8
+    elif BOSS.hp <5:
+        spdx = 10
     if TIME % fq == 0:
         x=random.choice(letters)
         y=str.upper(x)
@@ -152,13 +175,16 @@ def update():
         if i.left>=WIDTH:
            words.remove(i)
            PLAYER_injured()
+           bossattack()
     if(words != [] and words[0].name == flag):
         words.remove(words[0])
         BOSS_injured()
+        heroattack()
         flag = False
     else:
         if flag:
             PLAYER_injured()
+            bossattack()
             flag= False
 
 restartStage()
