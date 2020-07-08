@@ -160,8 +160,10 @@ def update():
     frq = BOSS.hp / 20 * 60
     if BOSS.hp >= 13:
         spdx = 13 / BOSS.hp * 8
-    elif BOSS.hp <13:
-        spdx = 8
+    elif BOSS.hp >= 3:
+        spdx = 20/ BOSS.hp +8
+    elif BOSS.hp <3:
+        spdx = 16
     if TIME % fq == 0:
         x=random.choice(letters)
         y=str.upper(x)
