@@ -89,7 +89,7 @@ def BOSS_idle():
 def BOSS_injured():
     global BOSS
     BOSS.image="soul_reaper\\injured"
-    BOSS.hp -= 0.5
+    BOSS.hp -= 0.20
     if(BOSS.hp < 0):
         BOSS.hp = 0
     BOSS.hpBar.image = HP_BAR[int(BOSS.hp)]
@@ -157,13 +157,11 @@ def update():
         PLAYER.image = "soul_reaper\\injured"
         clock.schedule(restartStage,0.25)
         return
+    frq = BOSS.hp / 20 * 60
     if BOSS.hp >= 13:
-        frq = BOSS.hp / 20 * 30
-        spdx = 20 / BOSS.hp * 5
+        spdx = 13 / BOSS.hp * 8
     elif BOSS.hp <13:
         spdx = 8
-    elif BOSS.hp <5:
-        spdx = 20/ BOSS.hp +8
     if TIME % fq == 0:
         x=random.choice(letters)
         y=str.upper(x)
