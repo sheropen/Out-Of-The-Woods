@@ -6,11 +6,13 @@ TIME = 0
 runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
 bg = [] #Background
 floor = [] #Floor
+block = [] #Block
 star = []
 countstar = []
 spdx = 3 #Speed of moves
 door = Actor('door')
 starsum = 0
+stage = 1
 
 ##Import images
 #Character
@@ -23,9 +25,12 @@ for i in range(12):
 #Background
 for i in range(5):
     bg.append(Actor("background\\plx-" + str(i+1)))
-#Floor
+#Floor(stage1)
 for i in range(2):
     floor.append(Actor('tileset\\ground'))
+#Block(stage2)
+for i in range(10):
+    block.append(Actor('tileset\\block'))
 #Star
 for i in range(3):
     star.append(Actor('star'))
@@ -41,6 +46,21 @@ PLAYER.jumph = 0
 PLAYER.frame = 0
 PLAYER.state = 'IDLE'
 PLAYER.direction = 'RIGHT'
+
+##initialize Variable
+def initializeVariable():
+    global PLAYER, starsum, star, countstar
+    PLAYER.jumph = 0
+    PLAYER.frame = 0
+    PLAYER.state = 'IDLE'
+    PLAYER.direction = 'RIGHT'
+    starsum = 0
+    star = []
+    for i in range(3):
+        star.append(Actor('star'))
+    countstar = []
+    for i in range(3):
+        countstar.append(Actor('greystar'))
 
 
 
@@ -63,6 +83,43 @@ def initializeMap():
     for i in range(3):
         countstar[i].midtop = WIDTH * 0.5 + (i - 1) * 60, 30
 
+def initializeMap2():
+    # Background
+    for i in range(5):
+        bg[i].topleft = 0, 0
+    #Block
+    block[0].midbottom = WIDTH * 0.5 - 26, HEIGHT - 30
+    block[1].midbottom = WIDTH * 0.5 + 26, HEIGHT - 30
+    block[2].bottomright = block[0].topleft
+    block[3].bottomleft = block[1].topright
+    block[4].bottomleft = block[3].bottomright
+    block[5].bottomright = block[2].topleft
+    block[6].bottomright = block[3].topright
+    block[7].bottomright = block[5].topright
+    block[8].bottomleft = block[2].right, block[7].bottom
+    block[9].bottomright = block[6].topleft
+    #Door
+    door.bottomright = block[4].topright
+    #Player
+    PLAYER.bottomleft = block[0].topleft
+    # Star
+    star[0].midbottom = block[1].midtop
+    star[1].midbottom = block[2].midtop
+    star[2].midbottom = block[9].midtop
+    # Countstar
+    for i in range(3):
+        countstar[i].midtop = WIDTH * 0.5 + (i - 1) * 60, 30
+
+
+##Restart the game
+def StageRestart():
+    initializeVariable()
+    initializeMap()
+
+def SecondStage():
+    initializeVariable()
+    initializeMap2()
+
 
 
 ##Actor Moves
@@ -81,10 +138,10 @@ def moveRight(act,mode=0):
     if(mode == 0 and act.left > WIDTH):
         act.right = spdx
 
-
+allfloor = block + floor
 #Collision
 def collideFloor():
-    for i in floor:
+    for i in allfloor:
         if(PLAYER.colliderect(i) and i.top-4*spdx<= PLAYER.bottom <= i.top+4*spdx):
             return True
     return False
@@ -94,34 +151,63 @@ def collideFloor():
 PLAYER.__setattr__('moveRight',types.MethodType(moveRight,PLAYER))
 PLAYER.__setattr__('moveLeft',types.MethodType(moveLeft,PLAYER))
 
-def drawStage1():
+
+# Player lose and win:
+def playerlose():
+    global PLAYER, starsum
+    if starsum < 3 and PLAYER.collidepoint(door.center):
+        return True
+    elif PLAYER.top >= HEIGHT:
+        return True
+    return False
+
+def playerwin():
+    global PLAYER, starsum
+    if starsum == 3 and PLAYER.collidepoint(door.center):
+        return True
+    else:
+        return False
+
+def drawStage():
     for i in bg:
-        i.draw()
-    for i in floor:
-        i.draw()
-    for i in star:
         i.draw()
     for i in countstar:
         i.draw()
+    for i in star:
+        i.draw()
+    if stage == 1:
+        for i in floor:
+            i.draw()
+    elif stage == 2:
+        for i in block:
+            i.draw()
+
+
+
 ##Draw & Update
 def draw():
     screen.clear()
-    drawStage1()
+    drawStage()
     door.draw()
     PLAYER.draw()
 
 
-##Restart
-def StageRestart():
-    global starsum
-    initializeMap()
-    starsum = 0
-
 
 
 def update():
-    global PLAYER, starsum
+    global PLAYER, starsum, stage
     PLAYER.floor = collideFloor()
+    if PLAYER.state == 'DEAD':
+        return
+    ##win or lose
+    if playerlose():
+        PLAYER.state = 'DEAD'
+        clock.schedule(StageRestart, 3.0)
+        return
+    if playerwin():
+        stage += 1
+        clock.schedule(SecondStage, 3.0)
+        return
     ##Pick Star
     for i in star:
         if PLAYER.colliderect(i):
@@ -143,7 +229,7 @@ def update():
             PLAYER.direction = 'RIGHT'
         elif(keyboard.left):
             PLAYER.direction = 'LEFT'
-        if(PLAYER.jumph >= PLAYER.height + 2*ground[0].height):
+        if(PLAYER.jumph >= PLAYER.height + 2*floor[0].height):
             PLAYER.state = 'FALL'
         return
     if not PLAYER.floor:
@@ -190,15 +276,12 @@ def update():
     elif(PLAYER.state == 'IDLE' and PLAYER.direction == 'RIGHT'):
         PLAYER.frame += 0.25
         PLAYER.image = idlerset[int(PLAYER.frame)%12]
-    ##Win or Lose
-    if starsum == 3 and PLAYER.colliderect(door):
-        print("You win!")
-    elif starsum < 3 and PLAYER.colliderect(door):
-        print("You lose! You haven't collected all the stars!")
-    if PLAYER.top >= 432:
-        print("You die!")
+
 
 
 
 initializeMap()
 pgzrun.go()
+'''问题：1、下一关无法显示block，但是block的位置都对
+         2、上一关的floor虽然不显示，但是还存在（可以踩、跳）
+   TODO：1、定义collideblock函数，针对左右撞击  '''
