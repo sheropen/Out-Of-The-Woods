@@ -163,7 +163,7 @@ def update():
     elif BOSS.hp <13:
         spdx = 8
     elif BOSS.hp <5:
-        spdx = 10
+        spdx = 20/ BOSS.hp +8
     if TIME % fq == 0:
         x=random.choice(letters)
         y=str.upper(x)
