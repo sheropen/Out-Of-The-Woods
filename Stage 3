@@ -4,7 +4,7 @@ import random
 #Initialize
 WIDTH,HEIGHT = 768,432
 TIME = 0
-letters = ["0","1","2","3","4","5","6","7","8","9"]
+letters = []
 HP_BAR = []
 for i in range(21):
     HP_BAR.append('hp_bar\\'+str(i))
@@ -12,94 +12,130 @@ idlerset,ground = [],[]
 spdx,fq = 5,30
 words = []
 flag = False
-##Import images
+stage = 1
+#======================IMPORT IMAGE======================
 #Character
 for i in range(12):
-    idlerset.append('idle\\idler\\idler'+str(i))
+    idlerset.append('player\\idle\\idler\\idler'+str(i))
 #Floor
 for i in range(50):
     ground.append(Actor('tileset\\ground'))
 
-##Setup Character
+#Attack Effect
+bossAttackEffect = Actor("transparent")
+playerAttackEffect = Actor("transparent")
+#======================SETUP CHARACTER======================
 #PLAYER
-PLAYER = Actor('idle\idler\idler0')
-PLAYER.jumph = 0
+PLAYER = Actor('player\\idle\\idler\\idler0')
 PLAYER.frame = 0
 PLAYER.state = 'IDLE'
 PLAYER.direction = 'RIGHT'
 PLAYER.hp = 20
 PLAYER.hpBar = Actor(HP_BAR[20])
 #BOSS
-BOSS = Actor("soul_reaper\\idle")
+BOSS = Actor("boss\\idle")
 BOSS.hp = 20
 BOSS.hpBar = Actor(HP_BAR[20])
-Bossattack = Actor("transparent")
-Heroattack= Actor("transparent")
+BOSS.hpdeduct = 0.5
+
+#======================INITIALIZE VARIABLES======================
+def initializeVariable1():
+    global BOSS,letters,spdx,fq
+    letters = []
+    for i in range(10):
+        letters.append(str(i))
+    BOSS.hpdeduct = 0.5
+    spdx,fq = 5,30
+    
+def initializeVariable2():
+    global BOSS,letters
+    letters = []
+    for i in range(26):
+        letters.append(chr(97+i))
+    BOSS.hpdeduct = 0.25
+    spdx,fq = 10,15
+
 def initializeVariable():
     global TIME,PLAYER,BOSS,spdx,fq,words,flag
-    spdx,fq = 5,30
     words = []
     flag = False
-    PLAYER = Actor('idle\idler\idler0')
-    PLAYER.jumph = 0
     PLAYER.frame = 0
     PLAYER.state = 'IDLE'
     PLAYER.direction = 'RIGHT'
+    PLAYER.image = 'player\\idle\\idler\\idler0'
     PLAYER.hp = 20
     PLAYER.hpBar = Actor(HP_BAR[20])
-    BOSS = Actor("soul_reaper\\idle")
+    BOSS.image = "boss\\idle"
     BOSS.hp = 20
     BOSS.hpBar = Actor(HP_BAR[20])
+    if(stage == 1):
+        return initializeVariable1()
+    else:
+        return initializeVariable2()
+
+#======================SETUP MAP======================
 def initializeMap():
-    #Player and boss and Hp
+    global PLAYER,BOSS
+    #Player, Boss and Hp Bar
     PLAYER.bottomleft = PLAYER.width*3,HEIGHT-ground[0].height
     BOSS.bottomright = WIDTH,HEIGHT
     PLAYER.hpBar.center = (100,320)
     BOSS.hpBar.center = (590,130)
-    Bossattack.center=(-310,650)
-    Heroattack.center=(420,130)
+    bossAttackEffect.center=(-310,650)
+    playerAttackEffect.center=(420,130)
     #Floor
     for i in range(50):
         ground[i].topright = (i+1)*(ground[i].width-5),HEIGHT - ground[i].height + 2
 
+#======================RESTART STAGE======================
 def restartStage():
     initializeVariable()
     initializeMap()
 
-##Character Status change
+#======================INTERACTIONS======================
+def on_key_down(key):
+    global flag
+    flag=key.name.lower()
+
 def PLAYER_idle():
     PLAYER.frame += 0.25
     PLAYER.image = idlerset[int(PLAYER.frame)%12]
 
 def PLAYER_injured():
     global PLAYER
-    PLAYER.image="player_injured"
+    PLAYER.image="player\\injured"
     PLAYER.hp -= 5
     if(PLAYER.hp < 0):
         PLAYER.hp = 0
-        PLAYER.image = 'soul_reaper\\injured'
+        PLAYER.image = 'boss\\injured'
     PLAYER.hpBar.image = HP_BAR[int(PLAYER.hp)]
     clock.schedule_unique(PLAYER_idle,1.0)
 
 def BOSS_idle():
-    BOSS.image="soul_reaper\\idle"
+    BOSS.image="boss\\idle"
 
 def BOSS_injured():
     global BOSS
-    BOSS.image="soul_reaper\\injured"
-    BOSS.hp -= 0.5
+    BOSS.image="boss\\injured"
+    BOSS.hp -= BOSS.hpdeduct
     if(BOSS.hp < 0):
         BOSS.hp = 0
     BOSS.hpBar.image = HP_BAR[int(BOSS.hp)]
-    clock.schedule_unique(BOSS_idle,1.0)
+    clock.schedule(BOSS_idle,1.0)
 
+def bossAttack():
+    bossAttackEffect.image=("boss\\attack")
+    clock.schedule_unique(bossAttackNormal,0.3)
+def bossAttackNormal():
+    bossAttackEffect.image=("transparent")
 
+def playerAttack():
+    playerAttackEffect.image=("player\\attack")
+    clock.schedule_unique(playerAttackNormal,0.3)
+def playerAttackNormal():
+    playerAttackEffect.image=("transparent")
 
-## Interaction
-def on_key_down(key):
-    global flag
-    flag=key.name.lower()
-
+#======================VICTORY & DEFEAT======================
 def playerLose():
     if(PLAYER.hp <= 0):
         return True
@@ -110,79 +146,65 @@ def playerWin():
         return True
     return False
 
-def nextStage():
-    pass
-
+#======================DRAW & UPDATE======================
 def drawStage3():
     for i in range(4):
         screen.blit(('background\\plx-'+str(i+1)),(0,0))
     for i in ground:
         i.draw()
     PLAYER.draw()
-    PLAYER.hpBar.draw()
     BOSS.draw()
+    bossAttackEffect.draw()
+    playerAttackEffect.draw()
+    PLAYER.hpBar.draw()
     BOSS.hpBar.draw()
-    Bossattack.draw()
-    Heroattack.draw()
-
+    
 def draw():
     screen.clear()
     drawStage3()
     for i in words:
         i.draw()
-def bossattack():
-    Bossattack.image=("bossattack")
-    clock.schedule_unique(bossattacknormal,0.3)
-def bossattacknormal():
-    Bossattack.image=("transparent")
 
-def heroattack():
-    Heroattack.image=("heroattack")
-    clock.schedule_unique(heroattacknormal,0.3)
-def heroattacknormal():
-    Heroattack.image=("transparent")
 def update():
-    global PLAYER,flag,key_pressed,TIME,spdx
+    global PLAYER,flag,key_pressed,TIME,spdx,stage
     TIME += 1
-    if(PLAYER.state == 'DEAD'):
+    if(PLAYER.state == 'DEAD' or PLAYER.state == 'WIN'):
         return
     if(playerWin()):
-        clock.schedule(restartStage,0.25)
-        return
-        #return nextStage()
+        stage+=1
+        PLAYER.state ='WIN'
+        return clock.schedule_unique(restartStage,0.5)
     if(playerLose()):
         PLAYER.state = 'DEAD'
-        PLAYER.image = "soul_reaper\\injured"
-        clock.schedule(restartStage,0.25)
-        return
-    if BOSS.hp >= 13:
-        frq = BOSS.hp / 20 * 30
-        spdx = 20 / BOSS.hp * 5
-    elif BOSS.hp >= 3:
-        spdx = 20/ BOSS.hp +8
-    elif BOSS.hp <3:
-        spdx = 16
-    if TIME % fq == 0:
+        PLAYER.image = "boss\\injured"
+        return clock.schedule_unique(restartStage,0.5)
+
+    if (TIME % fq) == 0:
         x=random.choice(letters)
         y=str.upper(x)
         t=Actor('alphabets\\'+x)
-        t.name = "k_"+x
+        if(stage == 1):
+            t.name = "k_"+x
+        else:
+            t.name = x
         words.append(t)
+
     for i in words:
         i.left += spdx
         if i.left>=WIDTH:
            words.remove(i)
            PLAYER_injured()
-           bossattack()
+           bossAttack()
+
     if(words != [] and words[0].name == flag):
         words.remove(words[0])
         BOSS_injured()
-        heroattack()
+        playerAttack()
         flag = False
     else:
         if flag:
             PLAYER_injured()
-            bossattack()
+            bossAttack()
             flag= False
 
 restartStage()
