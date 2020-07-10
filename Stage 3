@@ -37,14 +37,15 @@ BOSS = Actor("boss\\idle")
 BOSS.hp = 20
 BOSS.hpBar = Actor(HP_BAR[20])
 BOSS.hpdeduct = 0.5
-
+Refreshbutton = Actor("button")
+Gameover=Actor("gameover")
 #======================INITIALIZE VARIABLES======================
 def initializeVariable1():
     global BOSS,letters,spdx,fq
     letters = []
     for i in range(10):
         letters.append(str(i))
-    BOSS.hpdeduct = 20
+    BOSS.hpdeduct = 0.5
     spdx,fq = 5,30
     
 def initializeVariable2():
@@ -142,6 +143,10 @@ def playerAttackNormal():
     playerAttackEffect.image=("transparent")
 
 #======================VICTORY & DEFEAT======================
+def on_mouse_down(pos):
+    global Refreshbutton
+    if Refreshbutton.collidepoint(pos):
+        restartStage()
 def playerLose():
     if(PLAYER.hp <= 0):
         return True
@@ -167,9 +172,19 @@ def drawStage3():
     
 def draw():
     screen.clear()
-    drawStage3()
-    for i in words:
-        i.draw()
+    if(playerLose()):
+        for i in range(5):
+         screen.blit(("background\\plx-" + str(i+1)),(0,0))
+         Refreshbutton.center=(360,310)
+         Refreshbutton.draw()
+         Gameover.center=(370,160)
+         Gameover.draw()
+        for i in ground:
+         i.draw()
+    else:
+        drawStage3()
+        for i in words:
+         i.draw()
 
 def update():
     global PLAYER,flag,key_pressed,TIME,spdx,stage
@@ -183,7 +198,8 @@ def update():
     if(playerLose()):
         PLAYER.state = 'DEAD'
         PLAYER.image = "boss\\injured"
-        return clock.schedule_unique(restartStage,0.5)
+
+
 
     if (TIME % fq) == 0:
         x=random.choice(letters)
@@ -214,6 +230,6 @@ def update():
             flag= False
 
 restartStage()
-sounds.music.play(loops=10)
-sounds.music.set_volume(0.2)
+sounds.boss.play(loops=100)
+sounds.boss.set_volume(1)
 pgzrun.go()
