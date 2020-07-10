@@ -53,7 +53,7 @@ def initializeVariable2():
     for i in range(26):
         letters.append(chr(97+i))
     BOSS.hpdeduct = 0.25
-    spdx,fq = 10,15
+    spdx,fq = 15,10
 
 def initializeVariable():
     global TIME,PLAYER,BOSS,spdx,fq,words,flag
@@ -110,6 +110,8 @@ def PLAYER_injured():
         PLAYER.image = 'boss\\injured'
     PLAYER.hpBar.image = HP_BAR[int(PLAYER.hp)]
     clock.schedule_unique(PLAYER_idle,1.0)
+    sounds.lightning.set_volume(0.9)
+    sounds.lightning.play()
 
 def BOSS_idle():
     BOSS.image="boss\\idle"
@@ -122,6 +124,8 @@ def BOSS_injured():
         BOSS.hp = 0
     BOSS.hpBar.image = HP_BAR[int(BOSS.hp)]
     clock.schedule(BOSS_idle,1.0)
+    sounds.attack.play()
+    sounds.attack.set_volume(0.4)
 
 def bossAttack():
     bossAttackEffect.image=("boss\\attack")
@@ -211,3 +215,4 @@ restartStage()
 sounds.music.play(loops=10)
 sounds.music.set_volume(0.2)
 pgzrun.go()
+
