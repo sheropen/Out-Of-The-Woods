@@ -10,11 +10,11 @@ spdx = 3
 runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
 bg,bg1,bg2 = [],[],[] #Background #Background
 floor,door = [],[Actor('door')] #Floor
-stage = 4
+stage = 3
 substage = 1
 songFlag = False
 continueButton = Actor("button")
-startButton = Actor("start")
+startButton = Actor("play")
 GAME_STATE = "MENU"
 #Stage 1
 board,begin_pos,end_pos = [],[],[] #begin_pos是board初始时的左侧位置，end_pos是board终止时的左侧位置
@@ -22,7 +22,7 @@ star,starCount = [],[]
 
 #Stage 2 & Stage 3
 ground,block,layer1 = [],[],[] #Ground and layer1
-trap,killTrap,fallTrap = [],[],[] #Trap
+trap,killTrap,fallTrap,knife = [],[],[],[] #Trap
 mobs,mobs1,mobs2 = [],[],[]
 mobswalkr,mobswalkl = [],[]
 
@@ -143,9 +143,10 @@ def initializeVariable1():
             board.append(Actor('tileset\\board'))
 
 def initializeVariable2():
-    global PLAYER,bg1,bg2,floor,door
+    global PLAYER,bg1,bg2,floor,door,killTrap,knife
     bg1,bg2 = [],[]
     floor,door = [],[]
+    killTrap,knife = [],[]
     #Background
     for i in range(5):
         bg1.append(Actor("background\\plx-" + str(i+1)))
@@ -158,6 +159,11 @@ def initializeVariable2():
     PLAYER.jumph = 0
     PLAYER.frame = 0
     PLAYER.state = 'FALL'
+    #Kill Trap
+    for i in range(3):
+        killTrap.append(Actor("mobs\\walkl\\walkl0"))
+    for i in range(2):
+        knife.append(Actor("knife"))
 
 def initializeVariable3():
     global PLAYER,MaxJumpHeight,bg1,bg2,ground,block,layer1,door,killTrap,fallTrap,mobs1,mobs2,rightlimit,leftLimit,rightBorder,leftBorder,camCenter
@@ -255,10 +261,10 @@ def initializeVariable():
 
 #======================MERGE LIST======================
 def mergeList():
-    global floor,trap,tiles,bg,blocks,mobs
+    global floor,trap,tiles,bg,blocks,mobs,killTrap
     if(stage == 2):
         bg = bg1 + bg2
-        floor = floor+door
+        floor = floor+door+killTrap+knife
     elif(stage == 3):
         floor = ground + block + layer1
         trap = killTrap + fallTrap
@@ -353,6 +359,12 @@ def initializeMap2():
         floor[i].bottomleft = OUT
     door[0].bottomright = 25*(floor[0].width -2),HEIGHT-floor[0].height
     door[1].bottomright = PLAYER.bottomleft
+    killTrap[0].bottomleft = 6*(floor[0].width-2),HEIGHT - floor[0].height
+    killTrap[1].bottomleft = 12*(floor[0].width-2),HEIGHT - floor[0].height
+    killTrap[2].bottomleft = 18*(floor[0].width-2),HEIGHT - floor[0].height
+    knife[0].topleft = 2*8*(floor[0].width-2),HEIGHT-floor[0].height-PLAYER.height/2
+    knife[1].topleft = 2*14*(floor[0].width-2),HEIGHT-floor[0].height-PLAYER.height/2
+
 
 def initializeMap3():
     mergeList()
@@ -662,8 +674,11 @@ def playerLose2():
     global PLAYER
     PLAYER.status = 'DEAD'
     for i in killTrap:
-        if(PLAYER.colliderect(i) and i.effect == 'DEAD'):
-            i.top -= 30
+        if(PLAYER.colliderect(i)):
+            return True
+    for i in knife:
+        if(PLAYER.colliderect(i)):
+            sounds.spiketrap.play()
             return True
     if(PLAYER.top >= HEIGHT):
         return True
@@ -763,9 +778,9 @@ def draw():
     if(stage == 0):
         for i in range(5):
             screen.blit(("background\\plx-" + str(i+1)),(0,0))
-        screen.blit('rsz_title',(70,-50))
+        screen.blit('title',(70,-50))
         startButton.center = (360,310)
-        #startButton.draw()
+        startButton.draw()
         return
     if(PLAYER.state == 'WIN'):
         return
@@ -796,7 +811,7 @@ def update1():
     ##Win or Lose
     if playerLose1():
         PLAYER.state = 'DEAD'
-        setGameOver()
+        clock.schedule(setGameOver,0.5)
         return
     if playerWin1():
         substage += 1
@@ -897,14 +912,15 @@ def update2():
     ##Interactions
     if(playerLose2()):
         PLAYER.state = 'DEAD'
-        setGameOver()
+        clock.schedule(setGameOver,0.5)
         return
     if(playerWin2()):
         PLAYER.state = 'WIN'
         stage += 1
         songFlag = True
         return clock.schedule(restartStage,1)
-
+    for i in knife:
+        i.left -= spdx
     #On Floor
     PLAYER.floor = collideFloor()
     ##JUMP
@@ -959,7 +975,7 @@ def update3():
     ##Interactions
     if(playerLose3()):
         PLAYER.state = 'DEAD'
-        clock.schedule(setGameOver,1)
+        clock.schedule(setGameOver,0.5)
         return
     if(playerWin3()):
         PLAYER.state = 'WIN'
@@ -1072,7 +1088,7 @@ def update4():
         return clock.schedule_unique(restartStage,1)
     if(playerLose4()):
         PLAYER.state = 'DEAD'
-        setGameOver()
+        clock.schedule(setGameOver,0.5)
         return
 
     if (TIME % fq) == 0:
