@@ -10,9 +10,12 @@ spdx = 3
 runlset,runrset,idlelset,idlerset = [],[],[],[] #List of actions' frames
 bg,bg1,bg2 = [],[],[] #Background #Background
 floor,door = [],[Actor('door')] #Floor
-stage = 1
+stage = 4
 substage = 1
 songFlag = False
+continueButton = Actor("button")
+startButton = Actor("start")
+GAME_STATE = "MENU"
 #Stage 1
 board,begin_pos,end_pos = [],[],[] #begin_pos是board初始时的左侧位置，end_pos是board终止时的左侧位置
 star,starCount = [],[]
@@ -541,6 +544,20 @@ def mobsFall(act):
     act.jumph -= 1.5*spdx
 
 #======================INTERACTIONS======================
+def on_mouse_down(pos):
+    global GAME_STATE
+    global stage,startButton,continueButton
+    if continueButton.collidepoint(pos):
+        continueButton.pos = OUT
+        GAME_STATE = "PLAY"
+        restartStage()
+    if startButton.collidepoint(pos):
+        stage += 1
+        startButton.pos = OUT
+        restartStage()
+def setGameOver():
+    global GAME_STATE
+    GAME_STATE = 'GAMEOVER'
 #STAGE1
 def back(act, begin_pos):
     act.left = begin_pos
@@ -743,7 +760,21 @@ def drawStage4():
         i.draw()
 
 def draw():
-    if(PLAYER.state == 'WIN' or PLAYER.state =='LOSE'):
+    if(stage == 0):
+        for i in range(5):
+            screen.blit(("background\\plx-" + str(i+1)),(0,0))
+        screen.blit('rsz_title',(70,-50))
+        startButton.center = (360,310)
+        #startButton.draw()
+        return
+    if(PLAYER.state == 'WIN'):
+        return
+    elif(GAME_STATE =='GAMEOVER'):
+        for i in range(5):
+            screen.blit(("background\\plx-" + str(i+1)),(0,0))
+        screen.blit('gameover',(240,70))
+        continueButton.center=(360,310)
+        continueButton.draw()
         return
     screen.clear()
     if(stage == 1):
@@ -758,12 +789,15 @@ def draw():
 def update1():
     global PLAYER, starSum, substage, begin_pos, end_pos,stage,songFlag
     PLAYER.floor = (floor.collideFloor() or board.collideFloor())
-    if PLAYER.state == 'DEAD' or PLAYER.state == 'WIN':
+    if(PLAYER.state == 'DEAD'):
+        return
+    if(PLAYER.state == 'WIN'):
         return
     ##Win or Lose
     if playerLose1():
         PLAYER.state = 'DEAD'
-        return clock.schedule_unique(restartStage,1)
+        setGameOver()
+        return
     if playerWin1():
         substage += 1
         if(substage == 4):
@@ -863,7 +897,8 @@ def update2():
     ##Interactions
     if(playerLose2()):
         PLAYER.state = 'DEAD'
-        return clock.schedule(restartStage,1)
+        setGameOver()
+        return
     if(playerWin2()):
         PLAYER.state = 'WIN'
         stage += 1
@@ -924,7 +959,8 @@ def update3():
     ##Interactions
     if(playerLose3()):
         PLAYER.state = 'DEAD'
-        return clock.schedule(restartStage,1)
+        clock.schedule(setGameOver,1)
+        return
     if(playerWin3()):
         PLAYER.state = 'WIN'
         stage += 1
@@ -1026,7 +1062,7 @@ def update3():
         PLAYER.image = idlerset[int(PLAYER.frame)%12]
 
 def update4():
-    global PLAYER,flag,key_pressed,TIME,spd,substage,songFlag
+    global PLAYER,flag,key_pressed,TIME,spd,substage,songFlag,stage
     TIME += 1
     if(PLAYER.state == 'DEAD' or PLAYER.state == 'WIN'):
         return
@@ -1036,8 +1072,8 @@ def update4():
         return clock.schedule_unique(restartStage,1)
     if(playerLose4()):
         PLAYER.state = 'DEAD'
-        stage += 1
-        return clock.schedule_unique(restartStage,1)
+        setGameOver()
+        return
 
     if (TIME % fq) == 0:
         x=random.choice(letters)
