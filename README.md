@@ -479,11 +479,4 @@ def restartStage():
 | 顾景佳   | 关卡一、海报制作、报告撰写、视频制作、素材收集   | 
 | 柯旭洺   | 关卡四，游戏界面，游戏美化加工，素材收集，报告修改   | 
 
-### 讨论截图：
-
-![图片](https://uploader.shimo.im/f/u6bODKIHzsMYUipR.jpg!thumbnail)
-![图片](https://uploader.shimo.im/f/INULpuwLyJfJQQ5h.jpg!thumbnail)
-![图片](https://uploader.shimo.im/f/eCjp9A3vspb0e9sZ.jpg!thumbnail)
-![图片](https://uploader.shimo.im/f/KvLvyx0ZZl67Ne9W.jpg!thumbnail)
-
 
