@@ -1,4 +1,4 @@
-![图片](https://uploader.shimo.im/f/EiRdGqZJrNFyHaHx.png!thumbnail)
+<img alt="cover" src="__asset__/0.png"/>
 
 顾景佳，黄彬，柯旭洺，尤俊浩（排名按音序）
 
@@ -10,21 +10,21 @@
 
 ### **第一关**：初入森林——搜集小星星
 
-![图片](https://uploader.shimo.im/f/rbuxOuGSSzxydQcK.png!thumbnail)
+<img alt="cover" src="__asset__/1.png"/>
 
 ### **第二关**：跑酷——越过所有的障碍
 
-![图片](https://uploader.shimo.im/f/ha9pIOueSOOrD36w.png!thumbnail)
+<img alt="cover" src="__asset__/2.png"/>
 
 ### **第三关**：危机四伏——躲过伪装的陷阱
 
-![图片](https://uploader.shimo.im/f/qnypEYS8xiOn5kND.png!thumbnail)
+<img alt="cover" src="__asset__/3.png"/>
 
-![图片](https://uploader.shimo.im/f/L9EQt1UgCfPXJcHv.png!thumbnail)
+<img alt="cover" src="__asset__/4.png"/>
 
 ### ** ****第四关**：恐惧——有限时间内，在键盘上按下对应字符的键，击杀Boss
 
-![图片](https://uploader.shimo.im/f/odqaRxDPbqmTjigm.png!thumbnail)
+<img alt="cover" src="__asset__/5.png"/>
 
  
 
@@ -64,14 +64,10 @@ draw()函数——绘制屏幕、update()函数——更新变量
 
 暂停、帮助等图标选项、以及通关成功、失败等提示，使得游戏完整性更强
 
-![图片](https://uploader.shimo.im/f/1GInduZ2luoyFCc5.png!thumbnail)
-
-![图片](https://uploader.shimo.im/f/CZ1fjQKQ5QsAzCF0.png!thumbnail)
-
-![图片](https://uploader.shimo.im/f/YysEVA4499QbZI04.png!thumbnail)
-
-![图片](https://uploader.shimo.im/f/skf8jtCDYIIYjwQT.png!thumbnail)
-
+<img alt="cover" src="__asset__/6.png"/>
+<img alt="cover" src="__asset__/7.png"/>
+<img alt="cover" src="__asset__/8.png"/>
+<img alt="cover" src="__asset__/9.png"/>
 
 ---
 ## 三、实现方案及代码分析
